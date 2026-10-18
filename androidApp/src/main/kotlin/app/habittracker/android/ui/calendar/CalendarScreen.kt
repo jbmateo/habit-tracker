@@ -43,6 +43,7 @@ import app.habittracker.android.ui.common.CategoryHeader
 import app.habittracker.android.ui.common.HabitRow
 import app.habittracker.android.ui.common.MonthGrid
 import app.habittracker.android.ui.common.MonthHeader
+import app.habittracker.android.ui.common.StatTile
 import app.habittracker.android.ui.common.StreakBandBackground
 import app.habittracker.android.ui.common.domainErrorMessage
 import app.habittracker.android.ui.common.showReplacing
@@ -194,23 +195,14 @@ private fun describe(status: DayStatus): String = when (status) {
 @Composable
 private fun MonthSummary(calendar: MonthCalendar, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        SummaryTile("Perfect days", "${calendar.perfectDays}", Modifier.weight(1f))
-        SummaryTile(
-            "Completion",
+        StatTile("${calendar.perfectDays}", "Perfect days", "orange", Modifier.weight(1f))
+        StatTile(
             calendar.completionRate?.let { "${(it * 100).roundToInt()}%" } ?: "—",
+            "Completion",
+            "blue",
             Modifier.weight(1f),
         )
-        SummaryTile("Longest run", "${calendar.longestPerfectRun}", Modifier.weight(1f))
-    }
-}
-
-@Composable
-private fun SummaryTile(label: String, value: String, modifier: Modifier = Modifier) {
-    Surface(modifier, shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-        Column(Modifier.padding(12.dp)) {
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        StatTile("${calendar.longestPerfectRun}", "Longest run", "purple", Modifier.weight(1f))
     }
 }
 

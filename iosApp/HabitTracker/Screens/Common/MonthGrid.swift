@@ -88,19 +88,23 @@ struct MonthHeader: View {
     }
 }
 
-/// Small label-over-value tile used by the calendar summary and the habit detail stats.
+/// Small value-over-label tile, tinted with the palette color `colorKey`; used by the calendar summary and the
+/// habit detail stats.
 struct StatTile: View {
     let value: String
     let label: String
+    let colorKey: String
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        let color = Palette.color(colorKey)
         VStack(alignment: .leading, spacing: 2) {
-            Text(value).font(.title3.bold()).minimumScaleFactor(0.7).lineLimit(1)
+            Text(value).font(.title3.bold()).foregroundStyle(color).minimumScaleFactor(0.7).lineLimit(1)
             Text(label).font(.footnote).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(.fill.tertiary, in: RoundedRectangle(cornerRadius: 12))
+        .background(color.opacity(colorScheme == .dark ? 0.22 : 0.12), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
     }
 }

@@ -125,11 +125,12 @@ private struct DetailBody: View {
                 }
             }
             HStack(spacing: 8) {
-                StatTile(value: "🔥 \(state.detail.stats.currentStreak)", label: "Current streak")
-                StatTile(value: "\(state.detail.stats.bestStreak)", label: "Best streak")
+                StatTile(value: "🔥 \(state.detail.stats.currentStreak)", label: "Current streak", colorKey: "orange")
+                StatTile(value: "\(state.detail.stats.bestStreak)", label: "Best streak", colorKey: "purple")
                 StatTile(
                     value: state.detail.stats.completionRate.map { "\(Int(($0.doubleValue * 100).rounded()))%" } ?? "—",
-                    label: "Completion"
+                    label: "Completion",
+                    colorKey: "blue"
                 )
             }
             MonthHeader(

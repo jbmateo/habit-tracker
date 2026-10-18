@@ -177,12 +177,13 @@ private struct MonthSummary: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            StatTile(value: "\(calendar.perfectDays)", label: "Perfect days")
+            StatTile(value: "\(calendar.perfectDays)", label: "Perfect days", colorKey: "orange")
             StatTile(
                 value: calendar.completionRate.map { "\(Int(($0.doubleValue * 100).rounded()))%" } ?? "—",
-                label: "Completion"
+                label: "Completion",
+                colorKey: "blue"
             )
-            StatTile(value: "\(calendar.longestPerfectRun)", label: "Longest run")
+            StatTile(value: "\(calendar.longestPerfectRun)", label: "Longest run", colorKey: "purple")
         }
     }
 }
