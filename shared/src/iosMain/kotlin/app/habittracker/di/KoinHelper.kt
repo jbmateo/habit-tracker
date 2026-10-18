@@ -1,5 +1,6 @@
 package app.habittracker.di
 
+import app.habittracker.presentation.calendar.CalendarViewModel
 import app.habittracker.presentation.dashboard.DashboardViewModel
 import org.koin.mp.KoinPlatformTools
 
@@ -12,4 +13,7 @@ object KoinHelper {
 
     fun dashboard(): ViewModelHandle<DashboardViewModel> =
         handle { KoinPlatformTools.defaultContext().get().get<DashboardViewModel>() }
+
+    fun calendar(): ViewModelHandle<CalendarViewModel> =
+        handle { KoinPlatformTools.defaultContext().get().get<CalendarViewModel>() }
 }
