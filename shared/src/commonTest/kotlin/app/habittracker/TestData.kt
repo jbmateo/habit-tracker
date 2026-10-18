@@ -22,6 +22,7 @@ fun habit(
     archived: List<ArchivePeriod> = emptyList(),
     name: String = id,
     iconKey: String = "run",
+    reminder: String? = null,
 ): Habit = Habit(
     id = id,
     name = name,
@@ -30,4 +31,5 @@ fun habit(
     createdOn = date(created),
     schedules = schedules ?: listOf(ScheduleVersion(date(created), days)),
     archivePeriods = archived,
+    reminderTime = reminder?.let(kotlinx.datetime.LocalTime::parse),
 )

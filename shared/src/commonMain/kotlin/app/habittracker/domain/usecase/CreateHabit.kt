@@ -5,6 +5,7 @@ import app.habittracker.domain.repository.CategoryRepository
 import app.habittracker.domain.repository.HabitRepository
 import app.habittracker.domain.time.AppClock
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalTime
 
 class CreateHabit(
     private val habits: HabitRepository,
@@ -16,11 +17,12 @@ class CreateHabit(
         iconKey: String,
         categoryId: String,
         days: Set<DayOfWeek>,
+        reminderTime: LocalTime? = null,
     ): Outcome<String> {
         val input = when (val r = validateHabitInput(categories, name, iconKey, categoryId, days)) {
             is Outcome.Failure -> return r
             is Outcome.Success -> r.value
         }
-        return Outcome.Success(habits.create(input.name, iconKey, categoryId, clock.today(), input.days))
+        return Outcome.Success(habits.create(input.name, iconKey, categoryId, clock.today(), input.days, reminderTime))
     }
 }

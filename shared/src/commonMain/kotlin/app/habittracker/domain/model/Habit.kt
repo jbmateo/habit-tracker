@@ -2,6 +2,7 @@ package app.habittracker.domain.model
 
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 data class ScheduleVersion(val effectiveFrom: LocalDate, val days: Set<DayOfWeek>)
 
@@ -16,6 +17,8 @@ data class Habit(
     val createdOn: LocalDate,
     val schedules: List<ScheduleVersion>,
     val archivePeriods: List<ArchivePeriod>,
+    /** Local time of the daily reminder on scheduled days; `null` = no reminder. */
+    val reminderTime: LocalTime? = null,
 ) {
     val isArchived: Boolean get() = archivePeriods.any { it.toExclusive == null }
 

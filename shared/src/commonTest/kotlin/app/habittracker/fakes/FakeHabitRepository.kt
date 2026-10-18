@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 class FakeHabitRepository(private val store: FakeStore) : HabitRepository {
     override fun observeAll(): Flow<List<Habit>> =
@@ -24,6 +25,7 @@ class FakeHabitRepository(private val store: FakeStore) : HabitRepository {
         categoryId: String,
         createdOn: LocalDate,
         days: Set<DayOfWeek>,
+        reminderTime: LocalTime?,
     ): String {
         store.checkWrite()
         val category = store.categories.value.first { it.id == categoryId }
@@ -35,18 +37,19 @@ class FakeHabitRepository(private val store: FakeStore) : HabitRepository {
             category = category,
             createdOn = createdOn,
             schedules = listOf(ScheduleVersion(createdOn, days)),
+            reminderTime = reminderTime,
             archivePeriods = emptyList(),
         )
         return id
     }
 
-    override suspend fun update(id: String, name: String, iconKey: String, categoryId: String, schedule: ScheduleVersion?) {
+    override suspend fun update(id: String, name: String, iconKey: String, categoryId: String, schedule: ScheduleVersion?, reminderTime: LocalTime?) {
         store.checkWrite()
         val category = store.categories.value.first { it.id == categoryId }
         modify(id) { h ->
             val schedules = if (schedule == null) h.schedules else
                 h.schedules.filterNot { it.effectiveFrom == schedule.effectiveFrom } + schedule
-            h.copy(name = name, iconKey = iconKey, category = category, schedules = schedules)
+            h.copy(name = name, iconKey = iconKey, category = category, schedules = schedules, reminderTime = reminderTime)
         }
     }
 

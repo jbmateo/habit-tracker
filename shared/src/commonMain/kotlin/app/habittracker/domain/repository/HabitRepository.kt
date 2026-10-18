@@ -5,6 +5,7 @@ import app.habittracker.domain.model.ScheduleVersion
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 interface HabitRepository {
     /** Active and archived habits, fully hydrated. */
@@ -13,9 +14,9 @@ interface HabitRepository {
     suspend fun get(id: String): Habit?
 
     /** Returns the new id; inserts a schedule with effectiveFrom = [createdOn]. */
-    suspend fun create(name: String, iconKey: String, categoryId: String, createdOn: LocalDate, days: Set<DayOfWeek>): String
+    suspend fun create(name: String, iconKey: String, categoryId: String, createdOn: LocalDate, days: Set<DayOfWeek>, reminderTime: LocalTime? = null): String
     /** Atomically updates details and, when [schedule] is non-null, upserts that schedule version. */
-    suspend fun update(id: String, name: String, iconKey: String, categoryId: String, schedule: ScheduleVersion?)
+    suspend fun update(id: String, name: String, iconKey: String, categoryId: String, schedule: ScheduleVersion?, reminderTime: LocalTime? = null)
     suspend fun upsertSchedule(id: String, effectiveFrom: LocalDate, days: Set<DayOfWeek>)
     suspend fun openArchivePeriod(id: String, from: LocalDate)
     suspend fun closeArchivePeriod(id: String, from: LocalDate, toExclusive: LocalDate)

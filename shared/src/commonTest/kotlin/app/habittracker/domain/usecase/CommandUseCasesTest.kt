@@ -189,4 +189,11 @@ class CommandUseCasesTest {
         seed()
         assertEquals(5, store.categories.value.size)
     }
+
+    @Test fun createAndUpdateCarryReminderTime() = runTest {
+        val id = (createHabit("Read", "book", HEALTH.id, MON_WED_FRI, reminderTime = kotlinx.datetime.LocalTime(21, 0)) as Outcome.Success).value
+        assertEquals(kotlinx.datetime.LocalTime(21, 0), habits.get(id)!!.reminderTime)
+        updateHabit(id, "Read", "book", HEALTH.id, MON_WED_FRI, reminderTime = kotlinx.datetime.LocalTime(6, 45))
+        assertEquals(kotlinx.datetime.LocalTime(6, 45), habits.get(id)!!.reminderTime)
+    }
 }

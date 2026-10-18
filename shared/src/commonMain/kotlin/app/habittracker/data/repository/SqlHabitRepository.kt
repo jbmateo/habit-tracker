@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -51,7 +52,7 @@ class SqlHabitRepository(
         val row = habits.selectOneWithCategory(id).executeAsOneOrNull() ?: return@withContext null
         hydrate(
             SelectAllWithCategory(
-                row.id, row.name, row.iconKey, row.createdOn,
+                row.id, row.name, row.iconKey, row.createdOn, row.reminderTime,
                 row.categoryId, row.categoryName, row.colorKey, row.sortOrder,
             ),
             schedules.selectForHabit(id).executeAsList(),
@@ -66,22 +67,30 @@ class SqlHabitRepository(
         categoryId: String,
         createdOn: LocalDate,
         days: Set<DayOfWeek>,
+        reminderTime: LocalTime?,
     ): String = withContext(io) {
         val id = Uuid.random().toString()
         db.transaction {
-            habits.insert(id, name, iconKey, categoryId, createdOn.toString())
+            habits.insert(id, name, iconKey, categoryId, createdOn.toString(), reminderTime?.toStorage())
             schedules.upsert(id, createdOn.toString(), DaysMask.encode(days).toLong())
         }
         id
     }
 
-    override suspend fun update(id: String, name: String, iconKey: String, categoryId: String, schedule: ScheduleVersion?) {
+    override suspend fun update(
+        id: String,
+        name: String,
+        iconKey: String,
+        categoryId: String,
+        schedule: ScheduleVersion?,
+        reminderTime: LocalTime?,
+    ) {
         withContext(io) {
             db.transaction {
                 if (schedule != null) {
                     schedules.upsert(id, schedule.effectiveFrom.toString(), DaysMask.encode(schedule.days).toLong())
                 }
-                habits.updateDetails(name, iconKey, categoryId, id)
+                habits.updateDetails(name, iconKey, categoryId, reminderTime?.toStorage(), id)
             }
         }
     }
@@ -116,5 +125,9 @@ class SqlHabitRepository(
             .sortedBy { it.effectiveFrom },
         archivePeriods = pers.map { ArchivePeriod(LocalDate.parse(it.fromDate), it.toDate?.let(LocalDate::parse)) }
             .sortedBy { it.from },
+        reminderTime = row.reminderTime?.let(LocalTime::parse),
     )
+
+    /** Stored as "HH:mm". */
+    private fun LocalTime.toStorage(): String = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
 }

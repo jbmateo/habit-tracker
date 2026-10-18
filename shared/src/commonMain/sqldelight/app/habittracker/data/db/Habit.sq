@@ -3,26 +3,27 @@ CREATE TABLE Habit (
   name        TEXT NOT NULL,
   iconKey     TEXT NOT NULL,
   categoryId  TEXT NOT NULL REFERENCES Category(id),
-  createdOn   TEXT NOT NULL
+  createdOn   TEXT NOT NULL,
+  reminderTime TEXT
 );
 
 selectAllWithCategory:
-SELECT h.id, h.name, h.iconKey, h.createdOn,
+SELECT h.id, h.name, h.iconKey, h.createdOn, h.reminderTime,
        c.id AS categoryId, c.name AS categoryName, c.colorKey, c.sortOrder
 FROM Habit h JOIN Category c ON c.id = h.categoryId
 ORDER BY h.createdOn, h.name;
 
 selectOneWithCategory:
-SELECT h.id, h.name, h.iconKey, h.createdOn,
+SELECT h.id, h.name, h.iconKey, h.createdOn, h.reminderTime,
        c.id AS categoryId, c.name AS categoryName, c.colorKey, c.sortOrder
 FROM Habit h JOIN Category c ON c.id = h.categoryId
 WHERE h.id = ?;
 
 insert:
-INSERT INTO Habit(id, name, iconKey, categoryId, createdOn) VALUES (?, ?, ?, ?, ?);
+INSERT INTO Habit(id, name, iconKey, categoryId, createdOn, reminderTime) VALUES (?, ?, ?, ?, ?, ?);
 
 updateDetails:
-UPDATE Habit SET name = ?, iconKey = ?, categoryId = ? WHERE id = ?;
+UPDATE Habit SET name = ?, iconKey = ?, categoryId = ?, reminderTime = ? WHERE id = ?;
 
 deleteById:
 DELETE FROM Habit WHERE id = ?;

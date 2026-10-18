@@ -7,6 +7,7 @@ import app.habittracker.data.repository.SqlHabitRepository
 import app.habittracker.domain.model.ArchivePeriod
 import app.habittracker.domain.model.ScheduleVersion
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -206,5 +207,16 @@ class SqlRepositoriesTest {
             while (item != null) item = awaitItem()
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test fun reminderTimeRoundTrips() = runTest {
+        val f = Fixture(this)
+        val cat = f.categories.create("Fitness", "orange")
+        val id = f.habits.create("Run", "run", cat, d1, mwf, reminderTime = kotlinx.datetime.LocalTime(7, 30))
+        assertEquals(kotlinx.datetime.LocalTime(7, 30), f.habits.get(id)!!.reminderTime)
+        f.habits.update(id, "Run", "run", cat, schedule = null, reminderTime = null)
+        assertNull(f.habits.get(id)!!.reminderTime)
+        f.habits.update(id, "Run", "run", cat, schedule = null, reminderTime = kotlinx.datetime.LocalTime(21, 5))
+        assertEquals(kotlinx.datetime.LocalTime(21, 5), f.habits.observeAll().first().single().reminderTime)
     }
 }

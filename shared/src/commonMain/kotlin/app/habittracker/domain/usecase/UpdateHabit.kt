@@ -7,6 +7,7 @@ import app.habittracker.domain.repository.CategoryRepository
 import app.habittracker.domain.repository.HabitRepository
 import app.habittracker.domain.time.AppClock
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalTime
 
 class UpdateHabit(
     private val habits: HabitRepository,
@@ -19,6 +20,7 @@ class UpdateHabit(
         iconKey: String,
         categoryId: String,
         days: Set<DayOfWeek>,
+        reminderTime: LocalTime? = null,
     ): Outcome<Unit> {
         val habit = habits.get(id) ?: return Outcome.Failure(DomainError.HabitNotFound)
         val input = when (val r = validateHabitInput(categories, name, iconKey, categoryId, days)) {
@@ -26,7 +28,7 @@ class UpdateHabit(
             is Outcome.Success -> r.value
         }
         val schedule = if (input.days != habit.currentSchedule.days) ScheduleVersion(clock.today(), input.days) else null
-        habits.update(id, input.name, iconKey, categoryId, schedule)
+        habits.update(id, input.name, iconKey, categoryId, schedule, reminderTime)
         return Outcome.Success(Unit)
     }
 }
