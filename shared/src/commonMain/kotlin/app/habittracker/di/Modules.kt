@@ -38,6 +38,10 @@ import app.habittracker.presentation.dashboard.DashboardViewModel
 import app.habittracker.presentation.form.HabitFormViewModel
 import app.habittracker.presentation.habits.HabitListViewModel
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.LocalDateTime
+import app.habittracker.domain.usecase.MarkDoneFromReminder
+import app.habittracker.domain.reminders.ReminderSync
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -47,6 +51,9 @@ import kotlin.time.Clock
 
 /** Dispatcher qualifier for blocking database work. */
 val IoQualifier = named("io")
+
+/** `() -> LocalDateTime` in the device time zone, used to plan reminders. */
+val NowLocalQualifier = named("nowLocal")
 
 /** Provides DriverFactory, DayChangeSource and the `named("io")` CoroutineDispatcher. */
 expect val platformModule: Module
@@ -59,6 +66,9 @@ val sharedModule: Module = module {
     single<CompletionRepository> { SqlCompletionRepository(get(), get(IoQualifier)) }
     single<PreferencesRepository> { SqlPreferencesRepository(get(), get(IoQualifier)) }
     single<AppClock> { SystemAppClock(Clock.System, { TimeZone.currentSystemDefault() }, get()) }
+    single(NowLocalQualifier) { { Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()) } }
+    single { ReminderSync(get(), get(), get(), get(), log = ::println, now = get<() -> LocalDateTime>(NowLocalQualifier)) }
+    factory { MarkDoneFromReminder(get(), get(), get()) }
 
     factory { ToggleCompletion(get(), get(), get()) }
     factory { CreateHabit(get(), get(), get()) }

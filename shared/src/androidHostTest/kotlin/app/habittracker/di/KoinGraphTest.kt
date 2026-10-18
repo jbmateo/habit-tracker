@@ -41,6 +41,10 @@ import org.koin.core.module.Module
 import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.koinApplication
+import app.habittracker.domain.reminders.ReminderScheduler
+import app.habittracker.domain.reminders.ReminderSync
+import app.habittracker.domain.usecase.MarkDoneFromReminder
+import app.habittracker.fakes.FakeReminderScheduler
 import kotlin.test.assertEquals
 import kotlinx.datetime.LocalDate
 import org.koin.dsl.module
@@ -53,6 +57,7 @@ class KoinGraphTest {
         single<HabitDatabase> { inMemoryDb() }
         single<DayChangeSource> { object : DayChangeSource { override val changes: Flow<Unit> = emptyFlow() } }
         single<CoroutineDispatcher>(named("io")) { Dispatchers.Unconfined }
+        single<ReminderScheduler> { FakeReminderScheduler() }
     }
 
     @Test
@@ -81,6 +86,8 @@ class KoinGraphTest {
         assertNotNull(koin.get<ObserveCategories>())
         assertNotNull(koin.get<ObserveTodaySort>())
         assertNotNull(koin.get<SetTodaySort>())
+        assertNotNull(koin.get<ReminderSync>())
+        assertNotNull(koin.get<MarkDoneFromReminder>())
         assertNotNull(koin.get<ObserveDayDetail>())
         assertNotNull(koin.get<ObserveHabitDetail>())
         assertNotNull(koin.get<ObserveHabits>())
