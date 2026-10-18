@@ -1,9 +1,5 @@
 package app.habittracker.android.ui.nav
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Checklist
@@ -20,13 +16,21 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.Lifecycle
+import app.habittracker.android.ui.calendar.CalendarScreen
+import app.habittracker.android.ui.categories.CategoryListScreen
+import app.habittracker.android.ui.detail.HabitDetailScreen
+import app.habittracker.android.ui.form.HabitFormSheet
+import app.habittracker.android.ui.habits.HabitListScreen
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -47,21 +51,36 @@ private object Routes {
     fun habit(id: String) = "habit/$id"
 }
 
-/** Form sheet state: hidden, create (`habitId == null`) or edit. */
-private data class FormSheet(val habitId: String?)
+/**
+ * Form sheet state: create (`habitId == null`) or edit. [openId] is unique per open so each opening gets its own
+ * form ViewModel.
+ */
+private data class FormSheet(val habitId: String?, val openId: Int)
+
+/** Survives rotation and process death. Ids are never empty, so "" encodes create. */
+private val FormSheetSaver: Saver<FormSheet?, Any> = Saver(
+    save = { sheet -> sheet?.let { arrayListOf<Any>(it.habitId.orEmpty(), it.openId) } },
+    restore = { saved ->
+        @Suppress("UNCHECKED_CAST")
+        val list = saved as List<Any>
+        FormSheet((list[0] as String).ifEmpty { null }, list[1] as Int)
+    },
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNav() {
     val navController = rememberNavController()
     val snackbar = remember { SnackbarHostState() }
-    var formSheet by remember { mutableStateOf<FormSheet?>(null) }
+    val scope = rememberCoroutineScope()
+    var formSheet by rememberSaveable(stateSaver = FormSheetSaver) { mutableStateOf<FormSheet?>(null) }
+    var formOpens by rememberSaveable { mutableIntStateOf(0) }
 
     val backStack by navController.currentBackStackEntryAsState()
     val destination = backStack?.destination
     val showBar = Tab.entries.any { tab -> destination?.hierarchy?.any { it.route == tab.route } == true }
 
-    val openForm: (String?) -> Unit = { formSheet = FormSheet(it) }
+    val openForm: (String?) -> Unit = { formSheet = FormSheet(it, ++formOpens) }
     val openHabit: (String) -> Unit = { navController.navigate(Routes.habit(it)) }
 
     Scaffold(
@@ -96,34 +115,41 @@ fun AppNav() {
                     contentPadding = padding,
                 )
             }
-            composable(Tab.Calendar.route) { Placeholder("Calendar", padding) }
-            composable(Tab.Habits.route) { Placeholder("Habits", padding) }
-            composable(Routes.HABIT) { entry ->
-                Placeholder("Habit ${entry.arguments?.getString("id")}", padding)
+            composable(Tab.Calendar.route) { CalendarScreen(snackbar, padding) }
+            composable(Tab.Habits.route) {
+                HabitListScreen(
+                    onOpenHabit = openHabit,
+                    onAddHabit = { openForm(null) },
+                    onOpenCategories = { navController.navigate(Routes.CATEGORIES) },
+                    contentPadding = padding,
+                )
             }
-            composable(Routes.CATEGORIES) { Placeholder("Categories", padding) }
+            composable(Routes.HABIT) { entry ->
+                HabitDetailScreen(
+                    habitId = requireNotNull(entry.arguments?.getString("id")),
+                    snackbar = snackbar,
+                    // Pop only while this entry is still the visible destination, so a second close signal
+                    // arriving mid-transition cannot pop an unrelated screen.
+                    onClose = {
+                        if (entry.lifecycle.currentState == Lifecycle.State.RESUMED) navController.popBackStack()
+                    },
+                    onEdit = openForm,
+                    contentPadding = padding,
+                )
+            }
+            composable(Routes.CATEGORIES) {
+                CategoryListScreen(snackbar, onBack = { navController.popBackStack() }, contentPadding = padding)
+            }
         }
     }
 
     formSheet?.let { sheet ->
-        ModalBottomSheet(
-            onDismissRequest = { formSheet = null },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        ) {
-            FormSheetContent(sheet.habitId)
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val hideSheet: () -> Unit = {
+            scope.launch { sheetState.hide() }.invokeOnCompletion { formSheet = null }
+        }
+        ModalBottomSheet(onDismissRequest = { formSheet = null }, sheetState = sheetState) {
+            HabitFormSheet(habitId = sheet.habitId, sheetKey = sheet.openId, onDismiss = hideSheet)
         }
     }
-}
-
-/** Placeholder until Task 18 builds the habit form. */
-@Composable
-private fun FormSheetContent(habitId: String?) {
-    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-        Text(if (habitId == null) "New habit" else "Edit habit $habitId")
-    }
-}
-
-@Composable
-private fun Placeholder(title: String, padding: PaddingValues) {
-    Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { Text(title) }
 }

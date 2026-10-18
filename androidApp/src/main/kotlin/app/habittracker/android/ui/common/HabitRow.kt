@@ -3,6 +3,7 @@ package app.habittracker.android.ui.common
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,25 +27,34 @@ import app.habittracker.android.ui.theme.categoryColor
 import app.habittracker.domain.usecase.TodayHabitItem
 
 @Composable
-fun HabitRow(item: TodayHabitItem, onToggle: () -> Unit, onOpen: () -> Unit, modifier: Modifier = Modifier) {
+fun HabitRow(
+    item: TodayHabitItem,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    onOpen: (() -> Unit)? = null,
+    toggleEnabled: Boolean = true,
+    status: String? = null,
+) {
     val color = categoryColor(item.habit.category.colorKey, isSystemInDarkTheme())
     Row(
         modifier = modifier
-            .clickable(onClick = onOpen)
+            .then(if (onOpen != null) Modifier.clickable(onClick = onOpen) else Modifier)
             .padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(habitIcon(item.habit.iconKey), contentDescription = null, tint = color, modifier = Modifier.size(28.dp))
-        Text(
-            item.habit.name,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-        )
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(item.habit.name, style = MaterialTheme.typography.bodyLarge)
+            if (status != null) {
+                Text(status, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
         if (item.streak > 0) {
             Text("🔥 ${item.streak}", style = MaterialTheme.typography.labelLarge)
         }
         IconButton(
             onClick = onToggle,
+            enabled = toggleEnabled,
             modifier = Modifier.border(1.5.dp, if (item.isDone) color else MaterialTheme.colorScheme.outlineVariant, CircleShape).semantics {
                 contentDescription = (if (item.isDone) "Mark not done: " else "Mark done: ") + item.habit.name
             },

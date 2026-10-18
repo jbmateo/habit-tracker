@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,12 +57,15 @@ fun DashboardScreen(
     var celebrations by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
 
+    val currentOnAddHabit by rememberUpdatedState(onAddHabit)
+    val currentOnOpenHabit by rememberUpdatedState(onOpenHabit)
+
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
                 DashboardEffect.Celebrate -> celebrations++
-                DashboardEffect.OpenCreateHabit -> onAddHabit()
-                is DashboardEffect.OpenHabit -> onOpenHabit(effect.id)
+                DashboardEffect.OpenCreateHabit -> currentOnAddHabit()
+                is DashboardEffect.OpenHabit -> currentOnOpenHabit(effect.id)
                 is DashboardEffect.ShowDomainError -> scope.launch {
                     snackbar.currentSnackbarData?.dismiss()
                     snackbar.showSnackbar(domainErrorMessage(effect.error))

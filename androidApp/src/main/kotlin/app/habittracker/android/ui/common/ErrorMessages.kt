@@ -14,3 +14,9 @@ fun domainErrorMessage(error: DomainError): String = when (error) {
     DomainError.HabitNotFound -> "That habit no longer exists."
     DomainError.CategoryNotEmpty -> "Move or delete this category's habits first."
 }
+
+/** Replaces any snackbar currently shown with [message]. */
+suspend fun androidx.compose.material3.SnackbarHostState.showReplacing(message: String) {
+    currentSnackbarData?.dismiss()
+    showSnackbar(message)
+}

@@ -14,6 +14,13 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Orchestrator wipes app data before each test so the DB starts empty.
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
+    }
+
+    testOptions {
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
     }
 
     buildFeatures {
@@ -34,4 +41,11 @@ dependencies {
     implementation(libs.kotlinx.datetime)
 
     testImplementation(libs.kotlin.test.junit)
+
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestUtil(libs.androidx.test.orchestrator)
+    debugImplementation(libs.compose.ui.test.manifest)
 }
