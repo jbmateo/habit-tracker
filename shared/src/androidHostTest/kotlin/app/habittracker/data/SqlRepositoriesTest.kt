@@ -135,4 +135,50 @@ class SqlRepositoriesTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test fun observeAllHydratesConsistentlyOnCreate() = runTest {
+        val f = Fixture(this)
+        val cat = f.categories.create("Fitness", "orange")
+        f.habits.observeAll().test {
+            assertTrue(awaitItem().isEmpty())
+            f.habits.create("A", "run", cat, d1, mwf)
+            f.habits.create("B", "run", cat, d1, mwf)
+            var last = awaitItem()
+            while (last.size < 2) {
+                assertTrue(last.all { it.schedules.isNotEmpty() })
+                last = awaitItem()
+            }
+            assertTrue(last.all { it.schedules.isNotEmpty() })
+            assertEquals(setOf("A", "B"), last.map { it.name }.toSet())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test fun observeAllAfterDeleteNeverEmitsScheduleless() = runTest {
+        val f = Fixture(this)
+        val (_, id) = f.newHabit()
+        f.habits.observeAll().test {
+            var item = awaitItem()
+            assertTrue(item.all { it.schedules.isNotEmpty() })
+            f.habits.delete(id)
+            while (item.isNotEmpty()) {
+                item = awaitItem()
+                assertTrue(item.all { it.schedules.isNotEmpty() })
+            }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test fun observeSingleHabitHydrates() = runTest {
+        val f = Fixture(this)
+        val (_, id) = f.newHabit()
+        f.habits.observe(id).test {
+            val h = assertNotNull(awaitItem())
+            assertEquals(1, h.schedules.size)
+            f.habits.delete(id)
+            var item = awaitItem()
+            while (item != null) item = awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

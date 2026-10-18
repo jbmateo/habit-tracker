@@ -1,7 +1,6 @@
 package app.habittracker.data.repository
 
 import app.cash.sqldelight.coroutines.asFlow
-import app.cash.sqldelight.coroutines.mapToList
 import app.habittracker.data.db.DaysMask
 import app.habittracker.data.db.HabitDatabase
 import app.habittracker.data.db.HabitArchivePeriod
@@ -14,7 +13,8 @@ import app.habittracker.domain.model.ScheduleVersion
 import app.habittracker.domain.repository.HabitRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.DayOfWeek
@@ -30,18 +30,22 @@ class SqlHabitRepository(
     private val schedules = db.habitScheduleQueries
     private val periods = db.habitArchivePeriodQueries
 
+    /** Table changes only trigger a re-read; each emission is one consistent snapshot. */
     override fun observeAll(): Flow<List<Habit>> =
-        combine(
-            habits.selectAllWithCategory().asFlow().mapToList(io),
-            schedules.selectAll().asFlow().mapToList(io),
-            periods.selectAll().asFlow().mapToList(io),
-        ) { rows, scheds, pers ->
-            val schedByHabit = scheds.groupBy { it.habitId }
-            val perByHabit = pers.groupBy { it.habitId }
-            rows.map { hydrate(it, schedByHabit[it.id].orEmpty(), perByHabit[it.id].orEmpty()) }
-        }
+        merge(
+            habits.selectAllWithCategory().asFlow(),
+            schedules.selectAll().asFlow(),
+            periods.selectAll().asFlow(),
+        ).conflate().map { withContext(io) { readAll() } }
 
     override fun observe(id: String): Flow<Habit?> = observeAll().map { list -> list.firstOrNull { it.id == id } }
+
+    private fun readAll(): List<Habit> = db.transactionWithResult {
+        val schedByHabit = schedules.selectAll().executeAsList().groupBy { it.habitId }
+        val perByHabit = periods.selectAll().executeAsList().groupBy { it.habitId }
+        habits.selectAllWithCategory().executeAsList()
+            .map { hydrate(it, schedByHabit[it.id].orEmpty(), perByHabit[it.id].orEmpty()) }
+    }
 
     override suspend fun get(id: String): Habit? = withContext(io) {
         val row = habits.selectOneWithCategory(id).executeAsOneOrNull() ?: return@withContext null
