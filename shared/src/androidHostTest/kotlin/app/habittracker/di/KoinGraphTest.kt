@@ -7,6 +7,16 @@ import app.habittracker.domain.repository.CategoryRepository
 import app.habittracker.domain.repository.CompletionRepository
 import app.habittracker.domain.repository.HabitRepository
 import app.habittracker.domain.time.AppClock
+import app.habittracker.domain.usecase.ArchiveHabit
+import app.habittracker.domain.usecase.CreateCategory
+import app.habittracker.domain.usecase.CreateHabit
+import app.habittracker.domain.usecase.DeleteCategory
+import app.habittracker.domain.usecase.DeleteHabit
+import app.habittracker.domain.usecase.SeedDefaultCategoriesIfEmpty
+import app.habittracker.domain.usecase.ToggleCompletion
+import app.habittracker.domain.usecase.UnarchiveHabit
+import app.habittracker.domain.usecase.UpdateCategory
+import app.habittracker.domain.usecase.UpdateHabit
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -37,5 +47,15 @@ class KoinGraphTest {
         assertNotNull(koin.get<CategoryRepository>())
         assertNotNull(koin.get<CompletionRepository>())
         assertNotNull(koin.get<AppClock>())
+        assertNotNull(koin.get<ToggleCompletion>())
+        assertNotNull(koin.get<CreateHabit>())
+        assertNotNull(koin.get<UpdateHabit>())
+        assertNotNull(koin.get<ArchiveHabit>())
+        assertNotNull(koin.get<UnarchiveHabit>())
+        assertNotNull(koin.get<DeleteHabit>())
+        assertNotNull(koin.get<CreateCategory>())
+        assertNotNull(koin.get<UpdateCategory>())
+        assertNotNull(koin.get<DeleteCategory>())
+        assertNotNull(koin.get<SeedDefaultCategoriesIfEmpty>())
     }
 }
