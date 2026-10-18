@@ -32,6 +32,8 @@ class SmokeTest {
             rule.onAllNodesWithContentDescriptionCount("1 of 1 habits done") == 1
         }
         rule.onNodeWithText("1/1").assertIsDisplayed()
+        // "Today" is pinned by TestHabitApp, so the header never depends on when the test runs.
+        rule.onNodeWithText("Wednesday, 14 October").assertIsDisplayed()
     }
 }
 

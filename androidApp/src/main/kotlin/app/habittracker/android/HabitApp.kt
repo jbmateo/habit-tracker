@@ -2,11 +2,15 @@ package app.habittracker.android
 
 import android.app.Application
 import app.habittracker.di.initKoin
+import kotlinx.datetime.LocalDate
 import org.koin.android.ext.koin.androidContext
 
-class HabitApp : Application() {
+open class HabitApp : Application() {
+    /** Pins "today"; only the instrumented-test application overrides this. */
+    protected open val fixedToday: LocalDate? = null
+
     override fun onCreate() {
         super.onCreate()
-        initKoin { androidContext(this@HabitApp) }
+        initKoin(fixedToday) { androidContext(this@HabitApp) }
     }
 }

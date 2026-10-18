@@ -41,6 +41,8 @@ import org.koin.core.module.Module
 import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.koinApplication
+import kotlin.test.assertEquals
+import kotlinx.datetime.LocalDate
 import org.koin.dsl.module
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -91,5 +93,14 @@ class KoinGraphTest {
         assertNotNull(koin.get<HabitDetailViewModel> { parametersOf("some-id") })
         assertNotNull(koin.get<HabitFormViewModel> { parametersOf(*arrayOf<Any?>(null)) })
         assertNotNull(koin.get<HabitFormViewModel> { parametersOf("some-id") })
+    }
+
+    @Test
+    fun fixedClockModuleOverridesToday() {
+        val koin = koinApplication {
+            allowOverride(true)
+            modules(sharedModule, testPlatformModule, fixedClockModule(LocalDate(2026, 10, 14)))
+        }.koin
+        assertEquals(LocalDate(2026, 10, 14), koin.get<AppClock>().today())
     }
 }

@@ -9,7 +9,7 @@ final class SmokeUITests: XCTestCase {
     @MainActor
     private func launchFresh() -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-uiTestResetDB"]
+        app.launchArguments = ["-uiTestResetDB", "-uiTestToday", "2026-10-14"]
         app.launch()
         return app
     }
@@ -40,6 +40,8 @@ final class SmokeUITests: XCTestCase {
 
         // The ring draws "1/1" and exposes it as one accessibility element labelled "1 of 1 habits done".
         XCTAssertTrue(app.descendants(matching: .any)["1 of 1 habits done"].waitForExistence(timeout: 10))
+        // "Today" is pinned by -uiTestToday, so the header never depends on when the test runs.
+        XCTAssertTrue(app.staticTexts["Wednesday, October 14"].exists)
         XCTAssertTrue(app.buttons["Mark not done: Read"].exists)
     }
 

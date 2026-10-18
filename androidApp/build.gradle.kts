@@ -14,7 +14,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "app.habittracker.android.HabitTestRunner"
         // Orchestrator wipes app data before each test so the DB starts empty.
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
     }

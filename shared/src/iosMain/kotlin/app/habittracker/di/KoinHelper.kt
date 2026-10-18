@@ -7,6 +7,7 @@ import app.habittracker.presentation.dashboard.DashboardViewModel
 import app.habittracker.presentation.detail.HabitDetailViewModel
 import app.habittracker.presentation.form.HabitFormViewModel
 import app.habittracker.presentation.habits.HabitListViewModel
+import kotlinx.datetime.LocalDate
 import org.koin.core.parameter.parametersOf
 import org.koin.mp.KoinPlatformTools
 
@@ -14,12 +15,13 @@ import org.koin.mp.KoinPlatformTools
 object KoinHelper {
     /**
      * Starts Koin once; safe to call repeatedly. [resetDatabase] deletes the database file first (UI tests); it is
-     * ignored when Koin is already running, because the database is then already open.
+     * ignored when Koin is already running, because the database is then already open. [fixedToday] (ISO date, UI
+     * tests only) pins "today" so tests don't depend on when they run.
      */
-    fun start(resetDatabase: Boolean = false) {
+    fun start(resetDatabase: Boolean = false, fixedToday: String? = null) {
         if (KoinPlatformTools.defaultContext().getOrNull() != null) return
         if (resetDatabase) deleteHabitsDatabase()
-        initKoin()
+        initKoin(fixedToday = fixedToday?.let(LocalDate::parse))
     }
 
     fun dashboard(): ViewModelHandle<DashboardViewModel> =
