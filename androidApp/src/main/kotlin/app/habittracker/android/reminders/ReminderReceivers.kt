@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -24,17 +25,33 @@ import org.koin.core.component.get
 
 private val receiverScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-private fun canNotify(context: Context): Boolean =
-    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+private fun canNotify(context: Context): Boolean = mayPostNotifications(
+    sdkInt = Build.VERSION.SDK_INT,
+    permissionGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED,
+    appNotificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled(),
+)
 
 private fun openAppIntent(context: Context): PendingIntent = PendingIntent.getActivity(
     context, 0, Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
     PendingIntent.FLAG_IMMUTABLE,
 )
 
-/** Posts the reminder notification with a "Mark done" action. */
-class ReminderReceiver : BroadcastReceiver() {
+/** Posts the reminder notification with a "Mark done" action, then re-plans so the window keeps moving. */
+class ReminderReceiver : BroadcastReceiver(), KoinComponent {
     override fun onReceive(context: Context, intent: Intent) {
+        val pending = goAsync()
+        receiverScope.launch {
+            try {
+                post(context, intent)
+                // Without this, someone who stops opening the app gets 7 days of reminders and then none.
+                get<ReminderSync>().syncNow()
+            } finally {
+                pending.finish()
+            }
+        }
+    }
+
+    private fun post(context: Context, intent: Intent) {
         if (!canNotify(context)) return
         val reminderId = intent.data?.lastPathSegment ?: return
         val notificationId = notificationIdFor(reminderId)
@@ -90,10 +107,12 @@ class MarkDoneReceiver : BroadcastReceiver(), KoinComponent {
     }
 }
 
-/** Alarms are forgotten on reboot; re-plan them. */
+private val replanActions = setOf(Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_TIMEZONE_CHANGED, Intent.ACTION_TIME_CHANGED)
+
+/** Alarms are forgotten on reboot and hold instants from the old zone after a zone or clock change; re-plan them. */
 class BootReceiver : BroadcastReceiver(), KoinComponent {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
+        if (intent.action !in replanActions) return
         val pending = goAsync()
         receiverScope.launch {
             try {

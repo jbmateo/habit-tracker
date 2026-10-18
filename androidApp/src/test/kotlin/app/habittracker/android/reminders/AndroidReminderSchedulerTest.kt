@@ -28,7 +28,8 @@ class AndroidReminderSchedulerTest {
         val store = MemoryStore(mapOf(r("a", 14).id to r("a", 14).fingerprint, r("b", 15).id to r("b", 15).fingerprint))
         AndroidReminderScheduler(sink, store).replaceAll(listOf(r("a", 14), r("c", 16)))
         assertEquals(listOf(r("b", 15).id), sink.cancelled)
-        assertEquals(listOf(r("c", 16).id), sink.set)
+        // Every wanted alarm is (re)set: the store can't tell whether the OS still holds it.
+        assertEquals(listOf(r("a", 14).id, r("c", 16).id), sink.set)
         assertEquals(setOf(r("a", 14).id, r("c", 16).id), store.map.keys)
     }
 
@@ -36,8 +37,24 @@ class AndroidReminderSchedulerTest {
         val sink = FakeSink()
         val store = MemoryStore(mapOf(r("a", 14).id to r("a", 14).fingerprint))
         AndroidReminderScheduler(sink, store).replaceAll(listOf(r("a", 14, hour = 20)))
-        assertEquals(listOf(r("a", 14).id), sink.cancelled)
+        assertEquals(emptyList(), sink.cancelled) // same id: setting it replaces the old alarm
         assertEquals(listOf(r("a", 14).id), sink.set)
         assertEquals(r("a", 14, hour = 20).fingerprint, store.map.getValue(r("a", 14).id))
+    }
+
+    @Test fun alarmsLostAfterRebootAreSetAgain() = runTest {
+        // A reboot or force-stop wipes alarms but not the store.
+        val sink = FakeSink()
+        val store = MemoryStore(mapOf(r("a", 14).id to r("a", 14).fingerprint, r("a", 15).id to r("a", 15).fingerprint))
+        AndroidReminderScheduler(sink, store).replaceAll(listOf(r("a", 14), r("a", 15)))
+        assertEquals(listOf(r("a", 14).id, r("a", 15).id), sink.set)
+    }
+
+    @Test fun notificationGateByApiLevel() {
+        // Below API 33 POST_NOTIFICATIONS doesn't exist and always reads as denied.
+        assertEquals(true, mayPostNotifications(sdkInt = 31, permissionGranted = false, appNotificationsEnabled = true))
+        assertEquals(false, mayPostNotifications(sdkInt = 31, permissionGranted = false, appNotificationsEnabled = false))
+        assertEquals(false, mayPostNotifications(sdkInt = 34, permissionGranted = false, appNotificationsEnabled = true))
+        assertEquals(true, mayPostNotifications(sdkInt = 34, permissionGranted = true, appNotificationsEnabled = true))
     }
 }

@@ -80,3 +80,7 @@ class PrefsReminderStore(context: Context) : ScheduledReminderStore {
         }
     }
 }
+
+/** POST_NOTIFICATIONS exists only from API 33; below that it always reads as denied, so only the app-level switch counts. */
+fun mayPostNotifications(sdkInt: Int, permissionGranted: Boolean, appNotificationsEnabled: Boolean): Boolean =
+    appNotificationsEnabled && (sdkInt < Build.VERSION_CODES.TIRAMISU || permissionGranted)
