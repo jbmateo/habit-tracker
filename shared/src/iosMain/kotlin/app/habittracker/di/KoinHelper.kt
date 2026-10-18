@@ -1,5 +1,6 @@
 package app.habittracker.di
 
+import app.habittracker.data.db.deleteHabitsDatabase
 import app.habittracker.presentation.calendar.CalendarViewModel
 import app.habittracker.presentation.categories.CategoryListViewModel
 import app.habittracker.presentation.dashboard.DashboardViewModel
@@ -11,9 +12,14 @@ import org.koin.mp.KoinPlatformTools
 
 /** Entry point for the iOS app. Per-screen handle factories are added alongside each ViewModel. */
 object KoinHelper {
-    /** Starts Koin once; safe to call repeatedly. */
-    fun start() {
-        if (KoinPlatformTools.defaultContext().getOrNull() == null) initKoin()
+    /**
+     * Starts Koin once; safe to call repeatedly. [resetDatabase] deletes the database file first (UI tests); it is
+     * ignored when Koin is already running, because the database is then already open.
+     */
+    fun start(resetDatabase: Boolean = false) {
+        if (KoinPlatformTools.defaultContext().getOrNull() != null) return
+        if (resetDatabase) deleteHabitsDatabase()
+        initKoin()
     }
 
     fun dashboard(): ViewModelHandle<DashboardViewModel> =

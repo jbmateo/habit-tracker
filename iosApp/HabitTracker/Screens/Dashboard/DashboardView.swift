@@ -5,21 +5,40 @@ struct DashboardView: View {
     let onAddHabit: () -> Void
     let onOpenHabit: (String) -> Void
 
-    @State private var host = ViewModelHost(KoinHelper.shared.dashboard()) { $0.uiState }
+    var body: some View {
+        Hosted(make: { KoinHelper.shared.dashboard() }, state: { $0.uiState }) { host in
+            DashboardContent(host: host, onAddHabit: onAddHabit, onOpenHabit: onOpenHabit)
+        }
+    }
+}
+
+private struct DashboardContent: View {
+    let host: ViewModelHost<DashboardViewModel, DashboardUiState>
+    let onAddHabit: () -> Void
+    let onOpenHabit: (String) -> Void
+
     @State private var celebrations = 0
-    @State private var toggles = 0
     @State private var errorMessage: String?
 
     var body: some View {
         content
             .navigationTitle("Today")
             .navigationBarTitleDisplayMode(.inline)
-            .sensoryFeedback(.success, trigger: toggles)
-            .alert("Something went wrong", isPresented: errorPresented) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(errorMessage ?? "")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        host.vm.onEvent(event: DashboardEventAddHabitClicked.shared)
+                    } label: {
+                        Label("Add habit", systemImage: "plus")
+                    }
+                }
             }
+            // Success haptic only when the done count goes up, i.e. a toggle really succeeded.
+            .sensoryFeedback(trigger: doneCount) { old, new in
+                guard let old, let new, new > old else { return nil }
+                return .success
+            }
+            .errorAlert($errorMessage)
             .task { host.start() }
             .task {
                 for await effect in host.vm.effects {
@@ -34,8 +53,9 @@ struct DashboardView: View {
             }
     }
 
-    private var errorPresented: Binding<Bool> {
-        Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
+    /// Habits done today; `nil` until the dashboard has loaded, so the first load never counts as a toggle.
+    private var doneCount: Int? {
+        if case .content(let content) = onEnum(of: host.state) { Int(content.dashboard.done) } else { nil }
     }
 
     @ViewBuilder
@@ -84,13 +104,12 @@ struct DashboardView: View {
 
     private func groupSection(_ group: CategoryGroup<TodayHabitItem>) -> some View {
         Section {
-            ForEach(group.items as? [TodayHabitItem] ?? [], id: \.habit.id) { item in
+            ForEach(kotlinList(group.items, as: TodayHabitItem.self), id: \.habit.id) { item in
                 HabitRow(
-                    item: item,
-                    onToggle: {
-                        toggles += 1
-                        host.vm.onEvent(event: DashboardEventToggleHabit(id: item.habit.id))
-                    },
+                    habit: item.habit,
+                    isDone: item.isDone,
+                    streak: Int(item.streak),
+                    onToggle: { host.vm.onEvent(event: DashboardEventToggleHabit(id: item.habit.id)) },
                     onOpen: { host.vm.onEvent(event: DashboardEventHabitClicked(id: item.habit.id)) }
                 )
             }
@@ -117,19 +136,5 @@ struct DashboardView: View {
         let components = DateComponents(year: Int(date.year), month: Int(date.month.ordinal) + 1, day: Int(date.day))
         guard let value = Calendar.current.date(from: components) else { return "" }
         return value.formatted(.dateTime.weekday(.wide).day().month(.wide))
-    }
-}
-
-private func domainErrorMessage(_ error: DomainError) -> String {
-    switch onEnum(of: error) {
-    case .editWindowClosed: "You can only change today and yesterday."
-    case .notDue: "That habit isn't scheduled for this day."
-    case .invalidName: "Names need 1 to 40 characters."
-    case .noDaysSelected: "Pick at least one day."
-    case .unknownIcon: "That icon isn't available."
-    case .unknownColor: "That color isn't available."
-    case .categoryNotFound: "That category no longer exists."
-    case .habitNotFound: "That habit no longer exists."
-    case .categoryNotEmpty: "Move or delete this category's habits first."
     }
 }
