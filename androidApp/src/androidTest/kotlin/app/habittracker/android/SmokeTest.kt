@@ -7,6 +7,8 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.platform.app.InstrumentationRegistry
+import app.habittracker.android.ui.form.REMINDER_HINT
 import org.junit.Rule
 import org.junit.Test
 
@@ -34,6 +36,20 @@ class SmokeTest {
         rule.onNodeWithText("1/1").assertIsDisplayed()
         // "Today" is pinned by TestHabitApp, so the header never depends on when the test runs.
         rule.onNodeWithText("Wednesday, 14 October").assertIsDisplayed()
+    }
+
+    @Test
+    fun reminderToggleShowsTimeField() {
+        // Pre-grant so the system permission dialog doesn't cover the sheet.
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.uiAutomation.grantRuntimePermission(
+            instrumentation.targetContext.packageName, android.Manifest.permission.POST_NOTIFICATIONS,
+        )
+        rule.onNodeWithText("Create your first habit").performClick()
+        rule.onNodeWithContentDescription("Remind me").performClick()
+
+        rule.onNodeWithText(REMINDER_HINT).assertIsDisplayed()
+        rule.onNodeWithContentDescription("Reminder time").assertIsDisplayed()
     }
 }
 

@@ -35,6 +35,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
@@ -49,6 +50,7 @@ import app.habittracker.android.ui.common.StreakBandBackground
 import app.habittracker.presentation.calendar.StreakBand
 import app.habittracker.android.ui.common.MonthHeader
 import app.habittracker.android.ui.common.domainErrorMessage
+import app.habittracker.android.ui.common.reminderSuffix
 import app.habittracker.android.ui.common.scheduleSummary
 import app.habittracker.android.ui.common.showReplacing
 import app.habittracker.android.ui.icons.habitIcon
@@ -118,7 +120,7 @@ private fun DetailContent(state: HabitDetailUiState.Content, onEvent: (HabitDeta
             Icon(habitIcon(habit.iconKey), contentDescription = null, tint = color, modifier = Modifier.size(40.dp))
             Column {
                 Text(habit.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = color)
-                val subtitle = scheduleSummary(habit.currentSchedule.days) + if (habit.isArchived) " · Archived" else ""
+                val subtitle = scheduleSummary(habit.currentSchedule.days) + reminderSuffix(LocalContext.current, habit.reminderTime) + if (habit.isArchived) " · Archived" else ""
                 Text(subtitle, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

@@ -139,6 +139,8 @@ private fun FormBody(state: HabitFormUiState, onEvent: (HabitFormEvent) -> Unit)
                     )
                 }
             }
+            fullWidth { SectionLabel("Reminder") }
+            fullWidth { ReminderSection(state, inputsEnabled, onEvent) }
             fullWidth { SectionLabel("Icon") }
             items(state.iconKeys, key = { it }) { key -> IconCell(key, key == state.iconKey, inputsEnabled, onEvent) }
         }

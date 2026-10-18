@@ -1,16 +1,33 @@
 package app.habittracker.android
 
 import android.app.Application
+import app.habittracker.android.reminders.AndroidReminderScheduler
+import app.habittracker.android.reminders.PrefsReminderStore
+import app.habittracker.android.reminders.RealAlarmSink
+import app.habittracker.android.reminders.ensureReminderChannel
 import app.habittracker.di.initKoin
+import app.habittracker.domain.reminders.ReminderScheduler
+import app.habittracker.domain.reminders.ReminderSync
+import kotlinx.coroutines.MainScope
 import kotlinx.datetime.LocalDate
 import org.koin.android.ext.koin.androidContext
+import org.koin.dsl.module
 
 open class HabitApp : Application() {
     /** Pins "today"; only the instrumented-test application overrides this. */
     protected open val fixedToday: LocalDate? = null
 
+    private val appScope = MainScope()
+
     override fun onCreate() {
         super.onCreate()
-        initKoin(fixedToday) { androidContext(this@HabitApp) }
+        ensureReminderChannel(this)
+        val koin = initKoin(fixedToday) {
+            androidContext(this@HabitApp)
+            modules(module {
+                single<ReminderScheduler> { AndroidReminderScheduler(RealAlarmSink(get()), PrefsReminderStore(get())) }
+            })
+        }.koin
+        koin.get<ReminderSync>().start(appScope)
     }
 }

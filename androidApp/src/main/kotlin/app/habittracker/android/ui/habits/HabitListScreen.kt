@@ -30,10 +30,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.habittracker.android.ui.common.CategoryHeader
+import app.habittracker.android.ui.common.reminderSuffix
 import app.habittracker.android.ui.common.scheduleSummary
 import app.habittracker.android.ui.icons.habitIcon
 import app.habittracker.android.ui.theme.categoryColor
@@ -157,7 +159,7 @@ private fun HabitListRow(habit: Habit, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(habit.name, style = MaterialTheme.typography.bodyLarge)
             Text(
-                scheduleSummary(habit.currentSchedule.days),
+                scheduleSummary(habit.currentSchedule.days) + reminderSuffix(LocalContext.current, habit.reminderTime),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
