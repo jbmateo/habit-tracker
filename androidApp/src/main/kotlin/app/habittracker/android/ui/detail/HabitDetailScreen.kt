@@ -49,6 +49,7 @@ import app.habittracker.android.ui.common.scheduleSummary
 import app.habittracker.android.ui.common.showReplacing
 import app.habittracker.android.ui.icons.habitIcon
 import app.habittracker.android.ui.theme.categoryColor
+import app.habittracker.android.ui.theme.categoryOnColor
 import app.habittracker.domain.usecase.HabitDayState
 import app.habittracker.presentation.detail.HabitDetailEffect
 import app.habittracker.presentation.detail.HabitDetailEvent
@@ -104,7 +105,9 @@ fun HabitDetailScreen(
 private fun DetailContent(state: HabitDetailUiState.Content, onEvent: (HabitDetailEvent) -> Unit) {
     val detail = state.detail
     val habit = detail.habit
-    val color = categoryColor(habit.category.colorKey, isSystemInDarkTheme())
+    val dark = isSystemInDarkTheme()
+    val color = categoryColor(habit.category.colorKey, dark)
+    val onColor = categoryOnColor(habit.category.colorKey, dark)
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -131,7 +134,7 @@ private fun DetailContent(state: HabitDetailUiState.Content, onEvent: (HabitDeta
         MonthGrid(
             month = detail.month,
             leadingBlanks = state.leadingBlanks,
-            cells = detail.days.map { (date, dayState) -> @Composable { HabitDayCell(date.day, dayState, color) } },
+            cells = detail.days.map { (date, dayState) -> @Composable { HabitDayCell(date.day, dayState, color, onColor) } },
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 24.dp)) {
             OutlinedButton(onClick = { onEvent(HabitDetailEvent.EditClicked) }) { Text("Edit") }
@@ -172,7 +175,7 @@ private fun StatTile(value: String, label: String, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun HabitDayCell(day: Int, state: HabitDayState, color: Color) {
+private fun HabitDayCell(day: Int, state: HabitDayState, color: Color, onColor: Color) {
     val description = when (state) {
         HabitDayState.Done -> "done"
         HabitDayState.Missed -> "missed"
@@ -201,7 +204,7 @@ private fun HabitDayCell(day: Int, state: HabitDayState, color: Color) {
             "$day",
             style = MaterialTheme.typography.labelMedium,
             color = when (state) {
-                HabitDayState.Done -> Color.White
+                HabitDayState.Done -> onColor
                 HabitDayState.Missed -> MaterialTheme.colorScheme.error
                 else -> MaterialTheme.colorScheme.onSurface
             },

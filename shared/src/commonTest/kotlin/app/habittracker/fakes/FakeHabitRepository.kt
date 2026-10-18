@@ -40,10 +40,14 @@ class FakeHabitRepository(private val store: FakeStore) : HabitRepository {
         return id
     }
 
-    override suspend fun updateDetails(id: String, name: String, iconKey: String, categoryId: String) {
+    override suspend fun update(id: String, name: String, iconKey: String, categoryId: String, schedule: ScheduleVersion?) {
         store.checkWrite()
         val category = store.categories.value.first { it.id == categoryId }
-        modify(id) { it.copy(name = name, iconKey = iconKey, category = category) }
+        modify(id) { h ->
+            val schedules = if (schedule == null) h.schedules else
+                h.schedules.filterNot { it.effectiveFrom == schedule.effectiveFrom } + schedule
+            h.copy(name = name, iconKey = iconKey, category = category, schedules = schedules)
+        }
     }
 
     override suspend fun upsertSchedule(id: String, effectiveFrom: LocalDate, days: Set<DayOfWeek>) {

@@ -92,6 +92,15 @@ class HabitFormViewModelTest {
         }
     }
 
+    @Test fun editResolvesRemovedIconKeyToFallback() = runTest {
+        store.habits.value = listOf(habit("a", name = "Run", iconKey = "removed-icon", days = MON_WED_FRI))
+        vm("a").uiState.test {
+            val s = awaitLoaded()
+            assertEquals(IconKeys.FALLBACK, s.iconKey)
+            assertTrue(s.canSave)
+        }
+    }
+
     @Test fun missingHabitEmitsNotFoundThenDismiss() = runTest {
         vm("nope").effects.test {
             assertEquals(HabitFormEffect.ShowDomainError(DomainError.HabitNotFound), awaitItem())

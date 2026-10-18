@@ -158,7 +158,12 @@ private fun EditorDialog(editor: CategoryEditor, onEvent: (CategoryListEvent) ->
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onEvent(CategoryListEvent.SaveEditor) }) { Text("Save") } },
+        confirmButton = {
+            TextButton(
+                onClick = { onEvent(CategoryListEvent.SaveEditor) },
+                enabled = !editor.isSaving && editor.name.isNotBlank(),
+            ) { Text("Save") }
+        },
         dismissButton = { TextButton(onClick = { onEvent(CategoryListEvent.DismissEditor) }) { Text("Cancel") } },
     )
 }

@@ -2,6 +2,7 @@ package app.habittracker.presentation.categories
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.habittracker.domain.model.ColorKeys
 import app.habittracker.domain.model.Outcome
 import app.habittracker.domain.usecase.CreateCategory
 import app.habittracker.domain.usecase.DeleteCategory
@@ -30,7 +31,7 @@ class CategoryListViewModel(
     val effects: Flow<CategoryListEffect> = effectChannel.receiveAsFlow()
 
     // Local editor state. Read-then-write in onEvent and in the launched save relies on the Main
-    // dispatcher serialising access (no lock); a double-tapped Save is not de-duplicated.
+    // dispatcher serialising access (no lock); isSaving de-duplicates a double-tapped Save.
     private val editor = MutableStateFlow<CategoryEditor?>(null)
 
     val uiState: StateFlow<CategoryListUiState> =
@@ -46,7 +47,7 @@ class CategoryListViewModel(
             CategoryListEvent.AddClicked -> editor.value = CategoryEditor(null, "", DEFAULT_COLOR, null)
             is CategoryListEvent.EditClicked -> viewModelScope.launch {
                 val category = observe().first().firstOrNull { it.id == event.id } ?: return@launch
-                editor.value = CategoryEditor(category.id, category.name, category.colorKey, null)
+                editor.value = CategoryEditor(category.id, category.name, ColorKeys.resolve(category.colorKey), null)
             }
             // Editing clears the stale save error.
             is CategoryListEvent.NameChanged -> editor.update { it?.copy(name = event.v, error = null) }
@@ -61,6 +62,8 @@ class CategoryListViewModel(
 
     private fun save() {
         val current = editor.value ?: return
+        if (current.isSaving) return
+        editor.value = current.copy(isSaving = true)
         viewModelScope.launch {
             guarded {
                 val result = if (current.id == null) {
@@ -73,9 +76,10 @@ class CategoryListViewModel(
                 }
                 when (result) {
                     is Outcome.Success -> editor.value = null
-                    is Outcome.Failure -> editor.update { it?.copy(error = result.error) }
+                    is Outcome.Failure -> editor.update { it?.copy(error = result.error, isSaving = false) }
                 }
             }
+            editor.update { it?.copy(isSaving = false) }
         }
     }
 

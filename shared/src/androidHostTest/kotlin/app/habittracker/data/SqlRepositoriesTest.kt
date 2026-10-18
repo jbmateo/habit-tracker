@@ -5,6 +5,7 @@ import app.habittracker.data.repository.SqlCategoryRepository
 import app.habittracker.data.repository.SqlCompletionRepository
 import app.habittracker.data.repository.SqlHabitRepository
 import app.habittracker.domain.model.ArchivePeriod
+import app.habittracker.domain.model.ScheduleVersion
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -51,6 +52,31 @@ class SqlRepositoriesTest {
         assertEquals(d1, h.currentSchedule.effectiveFrom)
         assertEquals(mwf, h.currentSchedule.days)
         assertTrue(h.archivePeriods.isEmpty())
+    }
+
+    @Test fun updateIsAtomicWhenDetailsFail() = runTest {
+        val f = Fixture(this)
+        val (_, id) = f.newHabit()
+        assertFailsWith<Exception> {
+            f.habits.update(id, "Renamed", "bike", "missing-category", ScheduleVersion(d2, setOf(DayOfWeek.TUESDAY)))
+        }
+        val h = assertNotNull(f.habits.get(id))
+        assertEquals("Run", h.name)
+        assertEquals(1, h.schedules.size)
+        assertEquals(mwf, h.currentSchedule.days)
+    }
+
+    @Test fun updateAppliesDetailsAndSchedule() = runTest {
+        val f = Fixture(this)
+        val (cat, id) = f.newHabit()
+        f.habits.update(id, "Renamed", "bike", cat, ScheduleVersion(d2, setOf(DayOfWeek.TUESDAY)))
+        val h = assertNotNull(f.habits.get(id))
+        assertEquals("Renamed", h.name)
+        assertEquals(setOf(DayOfWeek.TUESDAY), h.currentSchedule.days)
+        f.habits.update(id, "Again", "bike", cat, null)
+        val h2 = assertNotNull(f.habits.get(id))
+        assertEquals("Again", h2.name)
+        assertEquals(2, h2.schedules.size)
     }
 
     @Test fun upsertScheduleSameDayReplaces() = runTest {

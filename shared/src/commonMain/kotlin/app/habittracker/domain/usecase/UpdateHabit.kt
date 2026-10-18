@@ -2,6 +2,7 @@ package app.habittracker.domain.usecase
 
 import app.habittracker.domain.model.DomainError
 import app.habittracker.domain.model.Outcome
+import app.habittracker.domain.model.ScheduleVersion
 import app.habittracker.domain.repository.CategoryRepository
 import app.habittracker.domain.repository.HabitRepository
 import app.habittracker.domain.time.AppClock
@@ -24,8 +25,8 @@ class UpdateHabit(
             is Outcome.Failure -> return r
             is Outcome.Success -> r.value
         }
-        habits.updateDetails(id, input.name, iconKey, categoryId)
-        if (input.days != habit.currentSchedule.days) habits.upsertSchedule(id, clock.today(), input.days)
+        val schedule = if (input.days != habit.currentSchedule.days) ScheduleVersion(clock.today(), input.days) else null
+        habits.update(id, input.name, iconKey, categoryId, schedule)
         return Outcome.Success(Unit)
     }
 }

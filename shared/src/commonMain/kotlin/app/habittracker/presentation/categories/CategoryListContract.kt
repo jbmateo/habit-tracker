@@ -6,8 +6,8 @@ import app.habittracker.domain.model.DomainError
 /** @property editor the open create/edit form, or `null` when closed. */
 data class CategoryListUiState(val categories: List<Category>, val editor: CategoryEditor?)
 
-/** @property id `null` while creating a new category. @property error last save failure, shown inline. */
-data class CategoryEditor(val id: String?, val name: String, val colorKey: String, val error: DomainError?)
+/** @property id `null` while creating a new category. @property error last save failure, shown inline. @property isSaving a save is in flight; further saves are ignored. */
+data class CategoryEditor(val id: String?, val name: String, val colorKey: String, val error: DomainError?, val isSaving: Boolean = false)
 
 sealed interface CategoryListEvent {
     data object AddClicked : CategoryListEvent

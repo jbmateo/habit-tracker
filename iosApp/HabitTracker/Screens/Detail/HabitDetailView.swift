@@ -48,7 +48,8 @@ private struct HabitDetailContent: View {
             }
     }
 
-    /// Idempotent: latches only after actually dismissing, so a close request that cannot act yet can be retried.
+    /// Idempotent: the first call dismisses and sets the latch, so repeated close requests (e.g. a delete plus its
+    /// close effect) dismiss only once.
     private func close() {
         guard !closed else { return }
         dismiss()

@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.habittracker.android.ui.icons.habitIcon
 import app.habittracker.android.ui.theme.categoryColor
+import app.habittracker.android.ui.theme.categoryOnColor
 import app.habittracker.domain.usecase.TodayHabitItem
 
 @Composable
@@ -35,7 +36,8 @@ fun HabitRow(
     toggleEnabled: Boolean = true,
     status: String? = null,
 ) {
-    val color = categoryColor(item.habit.category.colorKey, isSystemInDarkTheme())
+    val dark = isSystemInDarkTheme()
+    val color = categoryColor(item.habit.category.colorKey, dark)
     Row(
         modifier = modifier
             .then(if (onOpen != null) Modifier.clickable(onClick = onOpen) else Modifier)
@@ -65,7 +67,7 @@ fun HabitRow(
             Icon(
                 Icons.Rounded.Check,
                 contentDescription = null,
-                tint = if (item.isDone) Color.White else MaterialTheme.colorScheme.outline,
+                tint = if (item.isDone) categoryOnColor(item.habit.category.colorKey, dark) else MaterialTheme.colorScheme.outline,
             )
         }
     }

@@ -75,8 +75,15 @@ class SqlHabitRepository(
         id
     }
 
-    override suspend fun updateDetails(id: String, name: String, iconKey: String, categoryId: String) {
-        withContext(io) { habits.updateDetails(name, iconKey, categoryId, id) }
+    override suspend fun update(id: String, name: String, iconKey: String, categoryId: String, schedule: ScheduleVersion?) {
+        withContext(io) {
+            db.transaction {
+                if (schedule != null) {
+                    schedules.upsert(id, schedule.effectiveFrom.toString(), DaysMask.encode(schedule.days).toLong())
+                }
+                habits.updateDetails(name, iconKey, categoryId, id)
+            }
+        }
     }
 
     override suspend fun upsertSchedule(id: String, effectiveFrom: LocalDate, days: Set<DayOfWeek>) {

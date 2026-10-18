@@ -80,7 +80,7 @@ class HabitFormViewModel(
             return
         }
         val days = habit.currentSchedule.days
-        draft.update { it.copy(name = habit.name, categoryId = habit.category.id, iconKey = habit.iconKey, days = days) }
+        draft.update { it.copy(name = habit.name, categoryId = habit.category.id, iconKey = IconKeys.resolve(habit.iconKey), days = days) }
         loadedDays.value = days
         pending.value = false
     }

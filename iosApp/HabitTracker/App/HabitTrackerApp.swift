@@ -4,8 +4,13 @@ import Shared
 @main
 struct HabitTrackerApp: App {
     init() {
-        // UI tests pass `-uiTestResetDB` to start from an empty database.
-        KoinHelper.shared.start(resetDatabase: ProcessInfo.processInfo.arguments.contains("-uiTestResetDB"))
+        #if DEBUG
+        // UI tests pass `-uiTestResetDB` to start from an empty database (Debug builds only).
+        let reset = ProcessInfo.processInfo.arguments.contains("-uiTestResetDB")
+        #else
+        let reset = false
+        #endif
+        KoinHelper.shared.start(resetDatabase: reset)
     }
 
     var body: some Scene {

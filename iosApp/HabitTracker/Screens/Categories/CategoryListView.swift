@@ -131,6 +131,7 @@ private struct CategoryEditorSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { onEvent(CategoryListEventSaveEditor.shared) }
+                        .disabled(editor.isSaving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
         }

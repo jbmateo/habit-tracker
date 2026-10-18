@@ -2,6 +2,7 @@ package app.habittracker.presentation
 
 import app.cash.turbine.test
 import app.habittracker.HEALTH
+import app.habittracker.domain.model.ColorKeys
 import app.habittracker.domain.model.DomainError
 import app.habittracker.domain.usecase.CreateCategory
 import app.habittracker.domain.usecase.DeleteCategory
@@ -67,6 +68,30 @@ class CategoryListViewModelTest {
         }
     }
 
+    @Test fun doubleTapSaveCreatesOnce() = runTest {
+        val vm = vm()
+        vm.uiState.test {
+            awaitItem(); awaitItem()
+            vm.onEvent(CategoryListEvent.AddClicked)
+            vm.onEvent(CategoryListEvent.NameChanged("Study"))
+            vm.onEvent(CategoryListEvent.SaveEditor)
+            vm.onEvent(CategoryListEvent.SaveEditor)
+            cancelAndIgnoreRemainingEvents()
+        }
+        testScheduler.advanceUntilIdle()
+        assertEquals(listOf("Health", "Study"), store.categories.value.map { it.name })
+    }
+
+    @Test fun editOpensWithUnknownColorResolvedToFallback() = runTest {
+        store.categories.value = listOf(HEALTH.copy(colorKey = "removed-color"))
+        val vm = vm()
+        vm.uiState.test {
+            awaitItem(); awaitItem()
+            vm.onEvent(CategoryListEvent.EditClicked(HEALTH.id))
+            assertEquals(ColorKeys.FALLBACK, awaitItem().editor?.colorKey)
+        }
+    }
+
     @Test fun editClickedPrefillsAndUpdates() = runTest {
         val vm = vm()
         vm.uiState.test {
@@ -106,8 +131,10 @@ class CategoryListViewModelTest {
             vm.onEvent(CategoryListEvent.NameChanged("   "))
             awaitItem()
             vm.onEvent(CategoryListEvent.SaveEditor)
-            val editor = awaitItem().editor
+            var editor = awaitItem().editor
+            if (editor?.isSaving == true) editor = awaitItem().editor // in-flight state precedes the failure
             assertEquals(DomainError.InvalidName, editor?.error)
+            assertEquals(false, editor?.isSaving)
             // Editing clears the stale error.
             vm.onEvent(CategoryListEvent.NameChanged("Ok"))
             assertNull(awaitItem().editor?.error)

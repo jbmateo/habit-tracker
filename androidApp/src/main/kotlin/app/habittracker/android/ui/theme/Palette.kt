@@ -23,3 +23,25 @@ fun categoryColor(key: String, dark: Boolean): Color {
     val entry = palette.getValue(ColorKeys.resolve(key))
     return if (dark) entry.dark else entry.light
 }
+
+/**
+ * Readable foreground (black or white) for glyphs drawn on [categoryColor], chosen per mode by whichever has
+ * the higher WCAG contrast against that fill.
+ */
+fun categoryOnColor(key: String, dark: Boolean): Color =
+    if (contrastAgainstBlack(categoryColor(key, dark)) >= contrastAgainstWhite(categoryColor(key, dark))) Color.Black else Color.White
+
+/** WCAG contrast ratio between the fill for [key] and its [categoryOnColor]. */
+fun categoryOnColorContrast(key: String, dark: Boolean): Double {
+    val fill = categoryColor(key, dark)
+    return maxOf(contrastAgainstBlack(fill), contrastAgainstWhite(fill))
+}
+
+private fun contrastAgainstBlack(fill: Color) = (luminance(fill) + 0.05) / 0.05
+private fun contrastAgainstWhite(fill: Color) = 1.05 / (luminance(fill) + 0.05)
+
+/** WCAG relative luminance of an sRGB color. */
+private fun luminance(c: Color): Double {
+    fun channel(v: Float): Double = v.toDouble().let { if (it <= 0.03928) it / 12.92 else Math.pow((it + 0.055) / 1.055, 2.4) }
+    return 0.2126 * channel(c.red) + 0.7152 * channel(c.green) + 0.0722 * channel(c.blue)
+}

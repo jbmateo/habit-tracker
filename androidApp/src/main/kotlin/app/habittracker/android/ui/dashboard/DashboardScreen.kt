@@ -9,7 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -92,7 +96,17 @@ private fun DashboardContent(dashboard: TodayDashboard, celebrations: Int, onEve
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         item {
             Column(Modifier.padding(16.dp)) {
-                Text(formatDate(dashboard.date), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        formatDate(dashboard.date),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(onClick = { onEvent(DashboardEvent.AddHabitClicked) }) {
+                        Icon(Icons.Rounded.Add, contentDescription = "Add habit")
+                    }
+                }
                 Row(
                     Modifier.fillMaxWidth().padding(top = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
