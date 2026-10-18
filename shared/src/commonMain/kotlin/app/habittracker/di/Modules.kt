@@ -28,7 +28,9 @@ import app.habittracker.domain.usecase.UnarchiveHabit
 import app.habittracker.domain.usecase.UpdateCategory
 import app.habittracker.domain.usecase.UpdateHabit
 import app.habittracker.presentation.calendar.CalendarViewModel
+import app.habittracker.presentation.categories.CategoryListViewModel
 import app.habittracker.presentation.dashboard.DashboardViewModel
+import app.habittracker.presentation.habits.HabitListViewModel
 import kotlinx.datetime.TimeZone
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
@@ -71,4 +73,6 @@ val sharedModule: Module = module {
 
     viewModelOf(::DashboardViewModel)
     viewModelOf(::CalendarViewModel)
+    viewModelOf(::HabitListViewModel)
+    viewModelOf(::CategoryListViewModel)
 }
