@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,12 +68,13 @@ fun CalendarScreen(
     viewModel: CalendarViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                is CalendarEffect.ShowDomainError -> snackbar.showReplacing(domainErrorMessage(effect.error))
-                is CalendarEffect.ShowError -> snackbar.showReplacing(effect.message)
+                is CalendarEffect.ShowDomainError -> snackbar.showReplacing(scope, domainErrorMessage(effect.error))
+                is CalendarEffect.ShowError -> snackbar.showReplacing(scope, effect.message)
             }
         }
     }

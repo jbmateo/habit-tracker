@@ -31,7 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,8 +59,8 @@ import org.koin.core.parameter.parametersOf
 import kotlin.math.roundToInt
 
 /**
- * @param onClose pops this destination. It is called at most once per composition, whether the VM
- * signals it through the `Close` effect, the `Deleted` state, or both.
+ * @param onClose pops this destination; must be idempotent, since the VM may signal it through both the
+ * `Close` effect and the `Deleted` state.
  */
 @Composable
 fun HabitDetailScreen(
@@ -73,18 +73,18 @@ fun HabitDetailScreen(
     viewModel: HabitDetailViewModel = koinViewModel(key = "detail-$habitId") { parametersOf(habitId) },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
     val currentOnClose by rememberUpdatedState(onClose)
     val currentOnEdit by rememberUpdatedState(onEdit)
-    val closer = remember { OnceGuard() }
-    val close = { closer.once { currentOnClose() } }
+    val close = { currentOnClose() }
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
                 HabitDetailEffect.Close -> close()
                 is HabitDetailEffect.OpenEdit -> currentOnEdit(effect.id)
-                is HabitDetailEffect.ShowDomainError -> snackbar.showReplacing(domainErrorMessage(effect.error))
-                is HabitDetailEffect.ShowError -> snackbar.showReplacing(effect.message)
+                is HabitDetailEffect.ShowDomainError -> snackbar.showReplacing(scope, domainErrorMessage(effect.error))
+                is HabitDetailEffect.ShowError -> snackbar.showReplacing(scope, effect.message)
             }
         }
     }
@@ -97,17 +97,6 @@ fun HabitDetailScreen(
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
         }
         (state as? HabitDetailUiState.Content)?.let { DetailContent(it, viewModel::onEvent) }
-    }
-}
-
-/** Runs its block the first time only. */
-private class OnceGuard {
-    private var done = false
-    fun once(block: () -> Unit) {
-        if (!done) {
-            done = true
-            block()
-        }
     }
 }
 

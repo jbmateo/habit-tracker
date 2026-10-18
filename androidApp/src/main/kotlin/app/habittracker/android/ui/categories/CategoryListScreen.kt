@@ -32,6 +32,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,12 +62,13 @@ fun CategoryListScreen(
     viewModel: CategoryListViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
             when (effect) {
-                is CategoryListEffect.ShowDomainError -> snackbar.showReplacing(domainErrorMessage(effect.error))
-                is CategoryListEffect.ShowError -> snackbar.showReplacing(effect.message)
+                is CategoryListEffect.ShowDomainError -> snackbar.showReplacing(scope, domainErrorMessage(effect.error))
+                is CategoryListEffect.ShowError -> snackbar.showReplacing(scope, effect.message)
             }
         }
     }

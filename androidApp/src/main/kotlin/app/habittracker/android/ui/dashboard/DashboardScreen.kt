@@ -34,12 +34,12 @@ import app.habittracker.android.ui.common.HabitRow
 import app.habittracker.android.ui.common.ProgressRing
 import app.habittracker.android.ui.common.StreakCard
 import app.habittracker.android.ui.common.domainErrorMessage
+import app.habittracker.android.ui.common.showReplacing
 import app.habittracker.domain.usecase.TodayDashboard
 import app.habittracker.presentation.dashboard.DashboardEffect
 import app.habittracker.presentation.dashboard.DashboardEvent
 import app.habittracker.presentation.dashboard.DashboardUiState
 import app.habittracker.presentation.dashboard.DashboardViewModel
-import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import org.koin.androidx.compose.koinViewModel
 import java.time.format.DateTimeFormatter
@@ -66,14 +66,8 @@ fun DashboardScreen(
                 DashboardEffect.Celebrate -> celebrations++
                 DashboardEffect.OpenCreateHabit -> currentOnAddHabit()
                 is DashboardEffect.OpenHabit -> currentOnOpenHabit(effect.id)
-                is DashboardEffect.ShowDomainError -> scope.launch {
-                    snackbar.currentSnackbarData?.dismiss()
-                    snackbar.showSnackbar(domainErrorMessage(effect.error))
-                }
-                is DashboardEffect.ShowError -> scope.launch {
-                    snackbar.currentSnackbarData?.dismiss()
-                    snackbar.showSnackbar(effect.message)
-                }
+                is DashboardEffect.ShowDomainError -> snackbar.showReplacing(scope, domainErrorMessage(effect.error))
+                is DashboardEffect.ShowError -> snackbar.showReplacing(scope, effect.message)
             }
         }
     }

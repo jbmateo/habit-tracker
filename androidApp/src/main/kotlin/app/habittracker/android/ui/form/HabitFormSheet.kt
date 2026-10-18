@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -82,6 +83,7 @@ fun HabitFormSheet(
     viewModel: HabitFormViewModel = koinViewModel(key = "form-$sheetKey") { parametersOf(habitId) },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
     // The sheet is a separate window, so it hosts its own snackbar above the app's.
     val snackbar = remember { SnackbarHostState() }
     val currentOnDismiss by rememberUpdatedState(onDismiss)
@@ -90,8 +92,8 @@ fun HabitFormSheet(
         viewModel.effects.collect { effect ->
             when (effect) {
                 HabitFormEffect.Dismiss -> currentOnDismiss()
-                is HabitFormEffect.ShowDomainError -> snackbar.showReplacing(domainErrorMessage(effect.error))
-                is HabitFormEffect.ShowError -> snackbar.showReplacing(effect.message)
+                is HabitFormEffect.ShowDomainError -> snackbar.showReplacing(scope, domainErrorMessage(effect.error))
+                is HabitFormEffect.ShowError -> snackbar.showReplacing(scope, effect.message)
             }
         }
     }

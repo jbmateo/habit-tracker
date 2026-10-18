@@ -1,6 +1,9 @@
 package app.habittracker.android.ui.common
 
+import androidx.compose.material3.SnackbarHostState
 import app.habittracker.domain.model.DomainError
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /** Short human-readable message for a [DomainError]; shared by every screen that surfaces one. */
 fun domainErrorMessage(error: DomainError): String = when (error) {
@@ -15,8 +18,13 @@ fun domainErrorMessage(error: DomainError): String = when (error) {
     DomainError.CategoryNotEmpty -> "Move or delete this category's habits first."
 }
 
-/** Replaces any snackbar currently shown with [message]. */
-suspend fun androidx.compose.material3.SnackbarHostState.showReplacing(message: String) {
-    currentSnackbarData?.dismiss()
-    showSnackbar(message)
+/**
+ * Replaces any snackbar currently shown with [message]. Launches in [scope] so the caller (typically an effect
+ * collector) never suspends while the snackbar is visible.
+ */
+fun SnackbarHostState.showReplacing(scope: CoroutineScope, message: String) {
+    scope.launch {
+        currentSnackbarData?.dismiss()
+        showSnackbar(message)
+    }
 }

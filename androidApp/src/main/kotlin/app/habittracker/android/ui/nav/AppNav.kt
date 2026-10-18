@@ -15,12 +15,17 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
+import app.habittracker.android.ui.form.FormStoreHolder
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.lifecycle.Lifecycle
 import app.habittracker.android.ui.calendar.CalendarScreen
 import app.habittracker.android.ui.categories.CategoryListScreen
 import app.habittracker.android.ui.detail.HabitDetailScreen
@@ -28,7 +33,6 @@ import app.habittracker.android.ui.form.HabitFormSheet
 import app.habittracker.android.ui.habits.HabitListScreen
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -75,6 +79,7 @@ fun AppNav() {
     val scope = rememberCoroutineScope()
     var formSheet by rememberSaveable(stateSaver = FormSheetSaver) { mutableStateOf<FormSheet?>(null) }
     var formOpens by rememberSaveable { mutableIntStateOf(0) }
+    val formStores: FormStoreHolder = viewModel()
 
     val backStack by navController.currentBackStackEntryAsState()
     val destination = backStack?.destination
@@ -128,10 +133,9 @@ fun AppNav() {
                 HabitDetailScreen(
                     habitId = requireNotNull(entry.arguments?.getString("id")),
                     snackbar = snackbar,
-                    // Pop only while this entry is still the visible destination, so a second close signal
-                    // arriving mid-transition cannot pop an unrelated screen.
+                    // Pop by identity: idempotent, so a second close signal cannot pop an unrelated screen.
                     onClose = {
-                        if (entry.lifecycle.currentState == Lifecycle.State.RESUMED) navController.popBackStack()
+                        if (navController.currentBackStackEntry?.id == entry.id) navController.popBackStack()
                     },
                     onEdit = openForm,
                     contentPadding = padding,
@@ -145,11 +149,21 @@ fun AppNav() {
 
     formSheet?.let { sheet ->
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-        val hideSheet: () -> Unit = {
-            scope.launch { sheetState.hide() }.invokeOnCompletion { formSheet = null }
+        // Every dismissal path ends here, so the sheet's ViewModels are always cleared.
+        val close: () -> Unit = {
+            formSheet = null
+            formStores.release(sheet.openId)
         }
-        ModalBottomSheet(onDismissRequest = { formSheet = null }, sheetState = sheetState) {
-            HabitFormSheet(habitId = sheet.habitId, sheetKey = sheet.openId, onDismiss = hideSheet)
+        val hideSheet: () -> Unit = { scope.launch { sheetState.hide() }.invokeOnCompletion { close() } }
+        val owner = remember(sheet.openId) {
+            object : ViewModelStoreOwner {
+                override val viewModelStore = formStores.storeFor(sheet.openId)
+            }
+        }
+        ModalBottomSheet(onDismissRequest = close, sheetState = sheetState) {
+            CompositionLocalProvider(LocalViewModelStoreOwner provides owner) {
+                HabitFormSheet(habitId = sheet.habitId, sheetKey = sheet.openId, onDismiss = hideSheet)
+            }
         }
     }
 }
