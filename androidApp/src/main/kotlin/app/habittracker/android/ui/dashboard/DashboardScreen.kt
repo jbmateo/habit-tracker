@@ -1,0 +1,154 @@
+package app.habittracker.android.ui.dashboard
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.habittracker.android.ui.common.CategoryHeader
+import app.habittracker.android.ui.common.HabitRow
+import app.habittracker.android.ui.common.ProgressRing
+import app.habittracker.android.ui.common.StreakCard
+import app.habittracker.android.ui.common.domainErrorMessage
+import app.habittracker.domain.usecase.TodayDashboard
+import app.habittracker.presentation.dashboard.DashboardEffect
+import app.habittracker.presentation.dashboard.DashboardEvent
+import app.habittracker.presentation.dashboard.DashboardUiState
+import app.habittracker.presentation.dashboard.DashboardViewModel
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import org.koin.androidx.compose.koinViewModel
+import java.time.format.DateTimeFormatter
+
+@Composable
+fun DashboardScreen(
+    snackbar: SnackbarHostState,
+    onAddHabit: () -> Unit,
+    onOpenHabit: (String) -> Unit,
+    contentPadding: PaddingValues,
+    modifier: Modifier = Modifier,
+    viewModel: DashboardViewModel = koinViewModel(),
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var celebrations by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                DashboardEffect.Celebrate -> celebrations++
+                DashboardEffect.OpenCreateHabit -> onAddHabit()
+                is DashboardEffect.OpenHabit -> onOpenHabit(effect.id)
+                is DashboardEffect.ShowDomainError -> scope.launch {
+                    snackbar.currentSnackbarData?.dismiss()
+                    snackbar.showSnackbar(domainErrorMessage(effect.error))
+                }
+                is DashboardEffect.ShowError -> scope.launch {
+                    snackbar.currentSnackbarData?.dismiss()
+                    snackbar.showSnackbar(effect.message)
+                }
+            }
+        }
+    }
+
+    Column(modifier.fillMaxSize().padding(contentPadding)) {
+        when (val s = state) {
+            DashboardUiState.Loading -> Unit
+            DashboardUiState.NoHabits -> EmptyState(
+                title = "No habits yet",
+                body = "Build your routine one day at a time.",
+                cta = "Create your first habit",
+                onCta = { viewModel.onEvent(DashboardEvent.AddHabitClicked) },
+            )
+            is DashboardUiState.Content -> DashboardContent(s.dashboard, celebrations, viewModel::onEvent)
+        }
+    }
+}
+
+@Composable
+private fun DashboardContent(dashboard: TodayDashboard, celebrations: Int, onEvent: (DashboardEvent) -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+        item {
+            Column(Modifier.padding(16.dp)) {
+                Text(formatDate(dashboard.date), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    ProgressRing(dashboard.done, dashboard.due, celebrations)
+                    StreakCard(dashboard.streak, Modifier.weight(1f))
+                }
+                if (dashboard.isPerfect) {
+                    Text("Perfect day!", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+                }
+            }
+        }
+        if (dashboard.groups.isEmpty()) {
+            item {
+                EmptyState(
+                    title = "Nothing due today",
+                    body = "Enjoy the day off.",
+                    cta = null,
+                    onCta = {},
+                    modifier = Modifier.padding(top = 32.dp),
+                )
+            }
+        }
+        dashboard.groups.forEach { group ->
+            item(key = "header-${group.category.id}") { CategoryHeader(group.category) }
+            items(group.items, key = { it.habit.id }) { item ->
+                HabitRow(
+                    item = item,
+                    onToggle = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onEvent(DashboardEvent.ToggleHabit(item.habit.id))
+                    },
+                    onOpen = { onEvent(DashboardEvent.HabitClicked(item.habit.id)) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyState(title: String, body: String, cta: String?, onCta: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier.fillMaxWidth().padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+    ) {
+        Text(title, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+        Text(body, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
+        if (cta != null) Button(onClick = onCta) { Text(cta) }
+    }
+}
+
+private val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d MMMM")
+
+private fun formatDate(date: LocalDate): String =
+    java.time.LocalDate.of(date.year, date.month.ordinal + 1, date.day).format(dateFormatter)
