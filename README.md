@@ -13,8 +13,23 @@ Jetpack Compose on Android. It is a personal project for daily use and learning.
 - Calendar with 🔥 marking perfect days
 - Habit detail screen
 - Archive for habits you no longer track
+- Reminders: one optional time per habit, only on scheduled days, skipped if
+  the habit is already done, with a "Mark done" action on the notification
 
 All data is stored locally on the device.
+
+### Reminder permissions
+
+- **iOS:** the app asks for notification permission the first time you turn
+  on "Remind me". If you deny it, the form shows a note with a link to
+  Settings.
+- **Android:** on Android 13+ the app asks for `POST_NOTIFICATIONS` the same
+  way. Reminders use exact alarms when the system allows them
+  (`SCHEDULE_EXACT_ALARM`, off by default on Android 14+). Otherwise they
+  fall back to inexact alarms, which can arrive a few minutes late.
+  Alarms are re-planned after a reboot.
+- Reminders are planned 7 days ahead (at most 60 at a time) and refreshed
+  whenever habits or completions change.
 
 ## Architecture
 
@@ -96,10 +111,11 @@ What each suite covers:
 
 - Design spec: [docs/design/2026-10-18-habit-tracker-design.md](docs/design/2026-10-18-habit-tracker-design.md)
 - Implementation plan: [docs/plans/2026-10-18-habit-tracker.md](docs/plans/2026-10-18-habit-tracker.md)
+- Reminders spec: [docs/design/2026-10-19-reminders-design.md](docs/design/2026-10-19-reminders-design.md)
+- Reminders plan: [docs/plans/2026-10-19-reminders.md](docs/plans/2026-10-19-reminders.md)
 
 ## Known limitations (v1)
 
-- No reminders or notifications
 - No sync between devices or accounts
 - No home-screen widgets
 - iOS verification was done on the "iPhone Duo" simulator running iOS 27.1;
