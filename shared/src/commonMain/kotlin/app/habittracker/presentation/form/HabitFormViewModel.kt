@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalTime
 
 /** @param habitId the habit to edit, or `null` to create a new one. */
 class HabitFormViewModel(
@@ -45,6 +46,8 @@ class HabitFormViewModel(
         val nameTouched: Boolean = false,
         val saveAttempted: Boolean = false,
         val isSaving: Boolean = false,
+        val reminderEnabled: Boolean = false,
+        val reminderTime: LocalTime = DEFAULT_REMINDER_TIME,
     )
 
     // Read-then-write in onEvent relies on callers using the Main dispatcher (no lock).
@@ -80,7 +83,16 @@ class HabitFormViewModel(
             return
         }
         val days = habit.currentSchedule.days
-        draft.update { it.copy(name = habit.name, categoryId = habit.category.id, iconKey = IconKeys.resolve(habit.iconKey), days = days) }
+        draft.update {
+            it.copy(
+                name = habit.name,
+                categoryId = habit.category.id,
+                iconKey = IconKeys.resolve(habit.iconKey),
+                days = days,
+                reminderEnabled = habit.reminderTime != null,
+                reminderTime = habit.reminderTime ?: DEFAULT_REMINDER_TIME,
+            )
+        }
         loadedDays.value = days
         pending.value = false
     }
@@ -109,6 +121,8 @@ class HabitFormViewModel(
                 !d.isSaving && !loading,
             showScheduleNote = habitId != null && original != null && d.days != original,
             isSaving = d.isSaving,
+            reminderEnabled = d.reminderEnabled,
+            reminderTime = d.reminderTime,
         )
     }
 
@@ -124,6 +138,8 @@ class HabitFormViewModel(
             HabitFormEvent.EveryDayToggled -> draft.update {
                 it.copy(days = if (it.days == ALL_DAYS) setOf(DayOfWeek.MONDAY) else ALL_DAYS)
             }
+            HabitFormEvent.ReminderToggled -> draft.update { it.copy(reminderEnabled = !it.reminderEnabled) }
+            is HabitFormEvent.ReminderTimeChanged -> draft.update { it.copy(reminderTime = event.time) }
             HabitFormEvent.Save -> save()
         }
     }
@@ -140,9 +156,9 @@ class HabitFormViewModel(
         viewModelScope.launch {
             try {
                 val result: Outcome<*> = if (habitId == null) {
-                    create(state.name, state.iconKey, categoryId, state.days)
+                    create(state.name, state.iconKey, categoryId, state.days, state.reminderTimeOrNull())
                 } else {
-                    update(habitId, state.name, state.iconKey, categoryId, state.days)
+                    update(habitId, state.name, state.iconKey, categoryId, state.days, state.reminderTimeOrNull())
                 }
                 when (result) {
                     is Outcome.Success -> effectChannel.send(HabitFormEffect.Dismiss)
@@ -166,3 +182,5 @@ class HabitFormViewModel(
         val ALL_DAYS: Set<DayOfWeek> = DayOfWeek.entries.toSet()
     }
 }
+
+private fun HabitFormUiState.reminderTimeOrNull(): LocalTime? = if (reminderEnabled) reminderTime else null

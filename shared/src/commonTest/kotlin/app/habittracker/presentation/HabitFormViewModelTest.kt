@@ -259,4 +259,46 @@ class HabitFormViewModelTest {
             vm.effects.test { assertEquals(HabitFormEffect.ShowError("disk full"), awaitItem()) }
         }
     }
+
+    @Test fun newHabitReminderOffAtNine() = runTest {
+        vm().uiState.test {
+            val s = awaitLoaded()
+            assertEquals(false, s.reminderEnabled)
+            assertEquals(kotlinx.datetime.LocalTime(9, 0), s.reminderTime)
+        }
+    }
+
+    private suspend fun saveNew(vm: HabitFormViewModel, events: List<HabitFormEvent>) {
+        vm.uiState.test {
+            awaitLoaded()
+            vm.onEvent(HabitFormEvent.NameChanged("Read")); awaitItem()
+            events.forEach { vm.onEvent(it); awaitItem() }
+            vm.onEvent(HabitFormEvent.Save)
+            cancelAndIgnoreRemainingEvents()
+        }
+        vm.effects.test { assertEquals(HabitFormEffect.Dismiss, awaitItem()) }
+    }
+
+    @Test fun toggleAndTimeSavedOnCreate() = runTest {
+        saveNew(vm(), listOf(HabitFormEvent.ReminderToggled, HabitFormEvent.ReminderTimeChanged(kotlinx.datetime.LocalTime(21, 30))))
+        assertEquals(kotlinx.datetime.LocalTime(21, 30), store.habits.value.single().reminderTime)
+    }
+
+    @Test fun toggleOffSavesNull() = runTest {
+        saveNew(vm(), listOf(
+            HabitFormEvent.ReminderToggled,
+            HabitFormEvent.ReminderTimeChanged(kotlinx.datetime.LocalTime(7, 0)),
+            HabitFormEvent.ReminderToggled,
+        ))
+        assertEquals(null, store.habits.value.single().reminderTime)
+    }
+
+    @Test fun editLoadsExistingReminder() = runTest {
+        store.habits.value = listOf(habit("a", name = "Run", reminder = "06:45"))
+        vm("a").uiState.test {
+            val s = awaitLoaded()
+            assertEquals(true, s.reminderEnabled)
+            assertEquals(kotlinx.datetime.LocalTime(6, 45), s.reminderTime)
+        }
+    }
 }

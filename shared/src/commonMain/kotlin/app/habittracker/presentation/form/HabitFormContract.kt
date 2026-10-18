@@ -3,6 +3,7 @@ package app.habittracker.presentation.form
 import app.habittracker.domain.model.Category
 import app.habittracker.domain.model.DomainError
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalTime
 
 /**
  * @property isLoading true until the categories (and, when editing, the habit) have loaded.
@@ -22,7 +23,12 @@ data class HabitFormUiState(
     val canSave: Boolean,
     val showScheduleNote: Boolean,
     val isSaving: Boolean,
+    val reminderEnabled: Boolean = false,
+    val reminderTime: LocalTime = DEFAULT_REMINDER_TIME,
 )
+
+/** Pre-filled time when a reminder is first switched on. */
+val DEFAULT_REMINDER_TIME = LocalTime(9, 0)
 
 sealed interface HabitFormEvent {
     data class NameChanged(val v: String) : HabitFormEvent
@@ -30,6 +36,8 @@ sealed interface HabitFormEvent {
     data class IconSelected(val key: String) : HabitFormEvent
     data class DayToggled(val day: DayOfWeek) : HabitFormEvent
     data object EveryDayToggled : HabitFormEvent
+    data object ReminderToggled : HabitFormEvent
+    data class ReminderTimeChanged(val time: LocalTime) : HabitFormEvent
     data object Save : HabitFormEvent
 }
 
