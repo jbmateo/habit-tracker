@@ -1,0 +1,27 @@
+CREATE TABLE Category (
+  id         TEXT NOT NULL PRIMARY KEY,
+  name       TEXT NOT NULL,
+  colorKey   TEXT NOT NULL,
+  sortOrder  INTEGER NOT NULL
+);
+
+selectAll:
+SELECT * FROM Category ORDER BY sortOrder;
+
+selectById:
+SELECT * FROM Category WHERE id = ?;
+
+maxSortOrder:
+SELECT MAX(sortOrder) FROM Category;
+
+insert:
+INSERT INTO Category(id, name, colorKey, sortOrder) VALUES (?, ?, ?, ?);
+
+update:
+UPDATE Category SET name = ?, colorKey = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM Category WHERE id = ?;
+
+count:
+SELECT COUNT(*) FROM Category;

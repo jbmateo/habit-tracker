@@ -1,0 +1,20 @@
+CREATE TABLE Completion (
+  habitId  TEXT NOT NULL REFERENCES Habit(id) ON DELETE CASCADE,
+  date     TEXT NOT NULL,
+  PRIMARY KEY (habitId, date)
+);
+
+selectAll:
+SELECT * FROM Completion;
+
+selectDatesForHabit:
+SELECT date FROM Completion WHERE habitId = ?;
+
+exists:
+SELECT COUNT(*) FROM Completion WHERE habitId = ? AND date = ?;
+
+insert:
+INSERT INTO Completion(habitId, date) VALUES (?, ?);
+
+delete:
+DELETE FROM Completion WHERE habitId = ? AND date = ?;

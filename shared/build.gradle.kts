@@ -6,6 +6,8 @@ plugins {
 }
 
 kotlin {
+    compilerOptions.freeCompilerArgs.add("-Xexpect-actual-classes")
+
     androidLibrary {
         namespace = "app.habittracker.shared"
         compileSdk = 36
@@ -53,6 +55,7 @@ sqldelight {
             packageName.set("app.habittracker.data.db")
             generateAsync.set(false)
             verifyMigrations.set(true)
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
         }
     }
 }

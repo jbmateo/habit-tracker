@@ -1,0 +1,15 @@
+CREATE TABLE HabitSchedule (
+  habitId        TEXT NOT NULL REFERENCES Habit(id) ON DELETE CASCADE,
+  effectiveFrom  TEXT NOT NULL,
+  daysMask       INTEGER NOT NULL,
+  PRIMARY KEY (habitId, effectiveFrom)
+);
+
+selectAll:
+SELECT * FROM HabitSchedule ORDER BY habitId, effectiveFrom;
+
+selectForHabit:
+SELECT * FROM HabitSchedule WHERE habitId = ? ORDER BY effectiveFrom;
+
+upsert:
+INSERT OR REPLACE INTO HabitSchedule(habitId, effectiveFrom, daysMask) VALUES (?, ?, ?);

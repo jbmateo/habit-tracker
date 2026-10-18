@@ -1,0 +1,21 @@
+CREATE TABLE HabitArchivePeriod (
+  habitId   TEXT NOT NULL REFERENCES Habit(id) ON DELETE CASCADE,
+  fromDate  TEXT NOT NULL,
+  toDate    TEXT,
+  PRIMARY KEY (habitId, fromDate)
+);
+
+selectAll:
+SELECT * FROM HabitArchivePeriod ORDER BY habitId, fromDate;
+
+selectForHabit:
+SELECT * FROM HabitArchivePeriod WHERE habitId = ? ORDER BY fromDate;
+
+insertOpen:
+INSERT OR IGNORE INTO HabitArchivePeriod(habitId, fromDate, toDate) VALUES (?, ?, NULL);
+
+close:
+UPDATE HabitArchivePeriod SET toDate = ? WHERE habitId = ? AND fromDate = ?;
+
+deleteOne:
+DELETE FROM HabitArchivePeriod WHERE habitId = ? AND fromDate = ?;
