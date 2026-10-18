@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -55,10 +56,11 @@ fun MonthGrid(
             }
         }
         repeat(rows) { row ->
-            Row(Modifier.fillMaxWidth()) {
+            // One height per week row so adjacent cells (and streak bands) line up to the pixel.
+            Row(Modifier.fillMaxWidth().aspectRatio(7f)) {
                 repeat(7) { col ->
                     val index = row * 7 + col - leadingBlanks
-                    Box(Modifier.weight(1f).aspectRatio(1f), contentAlignment = Alignment.Center) {
+                    Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                         cells.getOrNull(index)?.takeIf { index >= 0 }?.invoke()
                     }
                 }

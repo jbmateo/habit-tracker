@@ -103,6 +103,7 @@ private struct DayCell: View {
             VStack(spacing: 1) {
                 Text("\(day.date.day)").font(.callout).monospacedDigit()
                 marker.frame(width: markerSize, height: markerSize)
+                    .padding(.bottom, 4)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
@@ -163,7 +164,7 @@ private struct StreakBandBackground: View {
     var body: some View {
         if band != .none {
             GeometryReader { geo in
-                let radius = (geo.size.height - 12) / 2
+                let radius = (geo.size.height - 6) / 2
                 let roundStart = band == .single || band == .start
                 let roundEnd = band == .single || band == .end
                 UnevenRoundedRectangle(
@@ -172,8 +173,8 @@ private struct StreakBandBackground: View {
                     bottomTrailingRadius: roundEnd ? radius : 0,
                     topTrailingRadius: roundEnd ? radius : 0
                 )
-                .fill(Palette.color("orange").opacity(colorScheme == .dark ? 0.35 : 0.25))
-                .padding(.vertical, 6)
+                .fill(Palette.color("orange").opacity(colorScheme == .dark ? 0.55 : 0.25))
+                .padding(.vertical, 3)
                 .padding(.leading, roundStart ? 3 : 0)
                 .padding(.trailing, roundEnd ? 3 : 0)
             }

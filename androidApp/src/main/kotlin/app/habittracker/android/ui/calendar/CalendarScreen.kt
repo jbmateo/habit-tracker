@@ -129,11 +129,11 @@ private fun StreakBandBackground(band: StreakBand) {
         else -> RoundedCornerShape(0)
     }
     val dark = isSystemInDarkTheme()
-    val tint = categoryColor("orange", dark).copy(alpha = if (dark) 0.35f else 0.25f)
+    val tint = categoryColor("orange", dark).copy(alpha = if (dark) 0.55f else 0.25f)
     Box(
         Modifier
             .fillMaxSize()
-            .padding(vertical = 6.dp)
+            .padding(vertical = 3.dp)
             .padding(
                 start = if (band == StreakBand.Single || band == StreakBand.Start) 3.dp else 0.dp,
                 end = if (band == StreakBand.Single || band == StreakBand.End) 3.dp else 0.dp,
@@ -176,7 +176,7 @@ private fun DayCellContent(day: CalendarDay, selected: Boolean, onClick: () -> U
             verticalArrangement = Arrangement.Center,
         ) {
             Text("${day.date.day}", style = MaterialTheme.typography.labelLarge)
-            Box(Modifier.size(16.dp), contentAlignment = Alignment.Center) { Marker(status) }
+            Box(Modifier.padding(bottom = 4.dp).size(16.dp), contentAlignment = Alignment.Center) { Marker(status) }
         }
     }
 }
