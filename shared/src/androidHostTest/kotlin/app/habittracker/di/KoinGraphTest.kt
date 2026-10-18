@@ -5,6 +5,9 @@ import app.habittracker.data.inMemoryDb
 import app.habittracker.data.time.DayChangeSource
 import app.habittracker.domain.repository.CategoryRepository
 import app.habittracker.domain.repository.CompletionRepository
+import app.habittracker.domain.repository.PreferencesRepository
+import app.habittracker.domain.usecase.ObserveTodaySort
+import app.habittracker.domain.usecase.SetTodaySort
 import app.habittracker.domain.repository.HabitRepository
 import app.habittracker.domain.time.AppClock
 import app.habittracker.domain.usecase.ArchiveHabit
@@ -60,6 +63,7 @@ class KoinGraphTest {
         assertNotNull(koin.get<HabitRepository>())
         assertNotNull(koin.get<CategoryRepository>())
         assertNotNull(koin.get<CompletionRepository>())
+        assertNotNull(koin.get<PreferencesRepository>())
         assertNotNull(koin.get<AppClock>())
         assertNotNull(koin.get<ToggleCompletion>())
         assertNotNull(koin.get<CreateHabit>())
@@ -73,6 +77,8 @@ class KoinGraphTest {
         assertNotNull(koin.get<SeedDefaultCategoriesIfEmpty>())
         assertNotNull(koin.get<GetHabit>())
         assertNotNull(koin.get<ObserveCategories>())
+        assertNotNull(koin.get<ObserveTodaySort>())
+        assertNotNull(koin.get<SetTodaySort>())
         assertNotNull(koin.get<ObserveDayDetail>())
         assertNotNull(koin.get<ObserveHabitDetail>())
         assertNotNull(koin.get<ObserveHabits>())

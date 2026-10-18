@@ -4,6 +4,10 @@ import app.habittracker.data.db.DriverFactory
 import app.habittracker.data.db.HabitDatabase
 import app.habittracker.data.repository.SqlCategoryRepository
 import app.habittracker.data.repository.SqlCompletionRepository
+import app.habittracker.data.repository.SqlPreferencesRepository
+import app.habittracker.domain.repository.PreferencesRepository
+import app.habittracker.domain.usecase.ObserveTodaySort
+import app.habittracker.domain.usecase.SetTodaySort
 import app.habittracker.data.repository.SqlHabitRepository
 import app.habittracker.data.time.SystemAppClock
 import app.habittracker.domain.repository.CategoryRepository
@@ -53,6 +57,7 @@ val sharedModule: Module = module {
     single<HabitRepository> { SqlHabitRepository(get(), get(IoQualifier)) }
     single<CategoryRepository> { SqlCategoryRepository(get(), get(IoQualifier)) }
     single<CompletionRepository> { SqlCompletionRepository(get(), get(IoQualifier)) }
+    single<PreferencesRepository> { SqlPreferencesRepository(get(), get(IoQualifier)) }
     single<AppClock> { SystemAppClock(Clock.System, { TimeZone.currentSystemDefault() }, get()) }
 
     factory { ToggleCompletion(get(), get(), get()) }
@@ -68,6 +73,8 @@ val sharedModule: Module = module {
 
     factory { GetHabit(get()) }
     factory { ObserveCategories(get()) }
+    factory { ObserveTodaySort(get()) }
+    factory { SetTodaySort(get()) }
     factory { ObserveDayDetail(get(), get(), get()) }
     factory { ObserveHabitDetail(get(), get(), get()) }
     factory { ObserveHabits(get()) }

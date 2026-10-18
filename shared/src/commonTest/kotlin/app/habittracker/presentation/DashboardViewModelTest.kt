@@ -24,6 +24,10 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import app.habittracker.fakes.FakePreferencesRepository
+import app.habittracker.domain.usecase.ObserveTodaySort
+import app.habittracker.domain.usecase.SetTodaySort
+import app.habittracker.domain.model.TodaySort
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -37,10 +41,13 @@ class DashboardViewModelTest {
     private val habits = FakeHabitRepository(store)
     private val completions = FakeCompletionRepository(store)
     private val clock = FakeAppClock(date("2026-01-14"))
+    private val prefs = FakePreferencesRepository()
 
     private fun vm() = DashboardViewModel(
         ObserveTodayDashboard(habits, completions, clock),
         ToggleCompletion(habits, completions, clock),
+        ObserveTodaySort(prefs),
+        SetTodaySort(prefs),
         clock,
     )
 
@@ -148,5 +155,22 @@ class DashboardViewModelTest {
             vm.onEvent(DashboardEvent.ToggleHabit("a"))
             assertEquals(DashboardEffect.ShowError("disk full"), awaitItem())
         }
+    }
+
+    @Test fun itemsFollowRememberedSortAndSortSelectedPersists() = runTest {
+        store.habits.value = listOf(habit("b", name = "Bike"), habit("a", name = "apple"))
+        prefs.todaySort.value = TodaySort.Name
+        val vm = vm()
+        vm.uiState.test {
+            awaitItem() // Loading
+            var s = assertIs<DashboardUiState.Content>(awaitItem())
+            assertEquals(TodaySort.Name, s.sort)
+            assertEquals(listOf("apple", "Bike"), s.items.map { it.habit.name })
+            vm.onEvent(DashboardEvent.SortSelected(TodaySort.Category))
+            s = assertIs<DashboardUiState.Content>(awaitItem())
+            assertEquals(TodaySort.Category, s.sort)
+            assertEquals(s.dashboard.groups.flatMap { it.items }, s.items)
+        }
+        assertEquals(TodaySort.Category, prefs.todaySort.value)
     }
 }

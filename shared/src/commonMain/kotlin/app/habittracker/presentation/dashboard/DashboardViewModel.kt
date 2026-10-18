@@ -7,6 +7,10 @@ import app.habittracker.domain.time.AppClock
 import app.habittracker.domain.usecase.ObserveTodayDashboard
 import app.habittracker.domain.usecase.ToggleCompletion
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.combine
+import app.habittracker.domain.usecase.SetTodaySort
+import app.habittracker.domain.usecase.ObserveTodaySort
+import app.habittracker.domain.logic.sortTodayItems
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,6 +25,8 @@ import kotlinx.datetime.LocalDate
 class DashboardViewModel(
     observe: ObserveTodayDashboard,
     private val toggle: ToggleCompletion,
+    observeSort: ObserveTodaySort,
+    private val setSort: SetTodaySort,
     private val clock: AppClock,
 ) : ViewModel() {
     private val effectChannel = Channel<DashboardEffect>(Channel.BUFFERED)
@@ -40,7 +46,14 @@ class DashboardViewModel(
             ) {
                 effectChannel.trySend(DashboardEffect.Celebrate)
             }
-            if (dashboard.hasAnyHabits) DashboardUiState.Content(dashboard) else DashboardUiState.NoHabits
+            dashboard
+        }
+        .combine(observeSort()) { dashboard, sort ->
+            if (dashboard.hasAnyHabits) {
+                DashboardUiState.Content(dashboard, sortTodayItems(dashboard.groups, sort), sort)
+            } else {
+                DashboardUiState.NoHabits
+            }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUiState.Loading)
 
@@ -60,6 +73,15 @@ class DashboardViewModel(
             }
             DashboardEvent.AddHabitClicked -> effectChannel.trySend(DashboardEffect.OpenCreateHabit)
             is DashboardEvent.HabitClicked -> effectChannel.trySend(DashboardEffect.OpenHabit(event.id))
+            is DashboardEvent.SortSelected -> viewModelScope.launch {
+                try {
+                    setSort(event.sort)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    effectChannel.send(DashboardEffect.ShowError(e.message ?: "Something went wrong"))
+                }
+            }
         }
     }
 }

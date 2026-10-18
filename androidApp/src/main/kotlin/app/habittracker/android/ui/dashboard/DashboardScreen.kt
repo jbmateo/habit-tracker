@@ -1,5 +1,15 @@
 package app.habittracker.android.ui.dashboard
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.rounded.Sort
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -8,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Button
@@ -33,13 +42,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.habittracker.android.ui.common.CategoryHeader
 import app.habittracker.android.ui.common.HabitRow
 import app.habittracker.android.ui.common.ProgressRing
 import app.habittracker.android.ui.common.StreakCard
 import app.habittracker.android.ui.common.domainErrorMessage
 import app.habittracker.android.ui.common.showReplacing
-import app.habittracker.domain.usecase.TodayDashboard
+import app.habittracker.domain.model.TodaySort
 import app.habittracker.presentation.dashboard.DashboardEffect
 import app.habittracker.presentation.dashboard.DashboardEvent
 import app.habittracker.presentation.dashboard.DashboardUiState
@@ -85,13 +93,14 @@ fun DashboardScreen(
                 cta = "Create your first habit",
                 onCta = { viewModel.onEvent(DashboardEvent.AddHabitClicked) },
             )
-            is DashboardUiState.Content -> DashboardContent(s.dashboard, celebrations, viewModel::onEvent)
+            is DashboardUiState.Content -> DashboardContent(s, celebrations, viewModel::onEvent)
         }
     }
 }
 
 @Composable
-private fun DashboardContent(dashboard: TodayDashboard, celebrations: Int, onEvent: (DashboardEvent) -> Unit) {
+private fun DashboardContent(state: DashboardUiState.Content, celebrations: Int, onEvent: (DashboardEvent) -> Unit) {
+    val dashboard = state.dashboard
     val haptic = LocalHapticFeedback.current
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
         item {
@@ -103,6 +112,7 @@ private fun DashboardContent(dashboard: TodayDashboard, celebrations: Int, onEve
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f),
                     )
+                    SortMenu(state.sort, onSelect = { onEvent(DashboardEvent.SortSelected(it)) })
                     IconButton(onClick = { onEvent(DashboardEvent.AddHabitClicked) }) {
                         Icon(Icons.Rounded.Add, contentDescription = "Add habit")
                     }
@@ -131,16 +141,56 @@ private fun DashboardContent(dashboard: TodayDashboard, celebrations: Int, onEve
                 )
             }
         }
-        dashboard.groups.forEach { group ->
-            item(key = "header-${group.category.id}") { CategoryHeader(group.category) }
-            items(group.items, key = { it.habit.id }) { item ->
-                HabitRow(
-                    item = item,
-                    onToggle = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        onEvent(DashboardEvent.ToggleHabit(item.habit.id))
-                    },
-                    onOpen = { onEvent(DashboardEvent.HabitClicked(item.habit.id)) },
+        if (state.items.isNotEmpty()) {
+            item {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
+                ) {
+                    Column {
+                        state.items.forEachIndexed { index, item ->
+                            key(item.habit.id) {
+                                HabitRow(
+                                    item = item,
+                                    onToggle = {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        onEvent(DashboardEvent.ToggleHabit(item.habit.id))
+                                    },
+                                    onOpen = { onEvent(DashboardEvent.HabitClicked(item.habit.id)) },
+                                )
+                            }
+                            if (index < state.items.lastIndex) {
+                                HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private val sortLabels = linkedMapOf(
+    TodaySort.Category to "Category",
+    TodaySort.Name to "Name A–Z",
+    TodaySort.Streak to "Streak",
+    TodaySort.ToDoFirst to "To do first",
+)
+
+@Composable
+private fun SortMenu(current: TodaySort, onSelect: (TodaySort) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) {
+            Icon(Icons.AutoMirrored.Rounded.Sort, contentDescription = "Sort habits, ${sortLabels.getValue(current)}")
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            sortLabels.forEach { (sort, label) ->
+                DropdownMenuItem(
+                    text = { Text(label) },
+                    onClick = { open = false; onSelect(sort) },
+                    trailingIcon = { if (sort == current) Icon(Icons.Rounded.Check, contentDescription = "Selected") },
                 )
             }
         }

@@ -52,7 +52,7 @@ fun HabitRow(
             }
         }
         if (item.streak > 0) {
-            Text("🔥 ${item.streak}", style = MaterialTheme.typography.labelLarge)
+            Text("🔥 ${item.streak}", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(end = 12.dp))
         }
         IconButton(
             onClick = onToggle,

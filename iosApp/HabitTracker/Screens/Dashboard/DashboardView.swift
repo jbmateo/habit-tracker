@@ -25,6 +25,9 @@ private struct DashboardContent: View {
             .navigationTitle("Today")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                if let sort = currentSort {
+                    ToolbarItem(placement: .topBarTrailing) { sortMenu(current: sort) }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         host.vm.onEvent(event: DashboardEventAddHabitClicked.shared)
@@ -53,6 +56,30 @@ private struct DashboardContent: View {
             }
     }
 
+    /// The remembered sort; `nil` until habits exist, so the menu only shows when there is a list to sort.
+    private var currentSort: TodaySort? {
+        if case .content(let content) = onEnum(of: host.state) { content.sort } else { nil }
+    }
+
+    private static let sortOptions: [(TodaySort, String)] = [
+        (.category, "Category"), (.name, "Name A–Z"), (.streak, "Streak"), (.toDoFirst, "To do first"),
+    ]
+
+    private func sortMenu(current: TodaySort) -> some View {
+        Menu {
+            Picker("Sort by", selection: Binding(
+                get: { current },
+                set: { host.vm.onEvent(event: DashboardEventSortSelected(sort: $0)) }
+            )) {
+                ForEach(Self.sortOptions, id: \.0) { option in
+                    Text(option.1).tag(option.0)
+                }
+            }
+        } label: {
+            Label("Sort habits", systemImage: "arrow.up.arrow.down")
+        }
+    }
+
     /// Habits done today; `nil` until the dashboard has loaded, so the first load never counts as a toggle.
     private var doneCount: Int? {
         if case .content(let content) = onEnum(of: host.state) { Int(content.dashboard.done) } else { nil }
@@ -70,11 +97,11 @@ private struct DashboardContent: View {
                 cta: "Create your first habit"
             )
         case .content(let content):
-            dashboard(content.dashboard)
+            dashboard(content.dashboard, items: kotlinList(content.items, as: TodayHabitItem.self))
         }
     }
 
-    private func dashboard(_ dashboard: TodayDashboard) -> some View {
+    private func dashboard(_ dashboard: TodayDashboard, items: [TodayHabitItem]) -> some View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 16) {
@@ -95,27 +122,21 @@ private struct DashboardContent: View {
                 emptyState(title: "Nothing due today", message: "Enjoy the day off.", cta: nil)
                     .listRowSeparator(.hidden)
             }
-            ForEach(dashboard.groups, id: \.category.id) { group in
-                groupSection(group)
+            if !items.isEmpty {
+                Section {
+                    ForEach(items, id: \.habit.id) { item in
+                        HabitRow(
+                            habit: item.habit,
+                            isDone: item.isDone,
+                            streak: Int(item.streak),
+                            onToggle: { host.vm.onEvent(event: DashboardEventToggleHabit(id: item.habit.id)) },
+                            onOpen: { host.vm.onEvent(event: DashboardEventHabitClicked(id: item.habit.id)) }
+                        )
+                    }
+                }
             }
         }
         .listStyle(.insetGrouped)
-    }
-
-    private func groupSection(_ group: CategoryGroup<TodayHabitItem>) -> some View {
-        Section {
-            ForEach(kotlinList(group.items, as: TodayHabitItem.self), id: \.habit.id) { item in
-                HabitRow(
-                    habit: item.habit,
-                    isDone: item.isDone,
-                    streak: Int(item.streak),
-                    onToggle: { host.vm.onEvent(event: DashboardEventToggleHabit(id: item.habit.id)) },
-                    onOpen: { host.vm.onEvent(event: DashboardEventHabitClicked(id: item.habit.id)) }
-                )
-            }
-        } header: {
-            CategoryHeader(category: group.category)
-        }
     }
 
     private func emptyState(title: String, message: String, cta: String?) -> some View {

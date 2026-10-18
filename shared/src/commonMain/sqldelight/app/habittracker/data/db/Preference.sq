@@ -1,0 +1,10 @@
+CREATE TABLE Preference (
+  key    TEXT NOT NULL PRIMARY KEY,
+  value  TEXT NOT NULL
+);
+
+selectValue:
+SELECT value FROM Preference WHERE key = ?;
+
+upsert:
+INSERT OR REPLACE INTO Preference(key, value) VALUES (?, ?);
