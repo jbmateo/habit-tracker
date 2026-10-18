@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 import Shared
 
 /// Create (`habitId == nil`) or edit form, presented in a sheet. Its ViewModel is created when the sheet content
@@ -14,6 +15,8 @@ struct HabitFormView: View {
 }
 
 private let scheduleNote = "Schedule changes apply from today. Past days keep their old schedule."
+private let reminderHint = "Only on scheduled days. Skipped if you've already done it."
+private let deniedNote = "Notifications are off for Habits. Turn them on in Settings."
 
 private struct HabitFormContent: View {
     let host: ViewModelHost<HabitFormViewModel, HabitFormUiState>
@@ -23,9 +26,34 @@ private struct HabitFormContent: View {
     /// Local copy of the name: typing must not wait on the ViewModel round trip, or fast input drops characters.
     /// It is filled from the ViewModel only once, when an edited habit finishes loading.
     @State private var name = ""
+    @State private var notificationsDenied = false
 
     private var state: HabitFormUiState { host.state }
     private var inputsEnabled: Bool { !state.isLoading && !state.isSaving }
+
+    /// The ViewModel's LocalTime as a Date for DatePicker (only hour and minute matter).
+    private var reminderDate: Binding<Date> {
+        Binding(
+            get: {
+                let t = state.reminderTime
+                return Calendar.current.date(from: DateComponents(hour: Int(t.hour), minute: Int(t.minute))) ?? Date()
+            },
+            set: { date in
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+                send(HabitFormEventReminderTimeChanged(
+                    time: Kotlinx_datetimeLocalTime(hour: Int32(parts.hour ?? 9), minute: Int32(parts.minute ?? 0), second: 0, nanosecond: 0)
+                ))
+            }
+        )
+    }
+
+    /// Asks once; afterwards reflects the current setting so the denied note can point to Settings.
+    private func requestNotificationPermission() async {
+        let center = UNUserNotificationCenter.current()
+        _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+        let settings = await center.notificationSettings()
+        notificationsDenied = settings.authorizationStatus == .denied
+    }
 
     var body: some View {
         Form {
@@ -45,6 +73,30 @@ private struct HabitFormContent: View {
                 }
             } header: {
                 Text("Days")
+            }
+            Section("Reminder") {
+                Toggle("Remind me", isOn: Binding(
+                    get: { state.reminderEnabled },
+                    set: { on in
+                        send(HabitFormEventReminderToggled.shared)
+                        if on { Task { await requestNotificationPermission() } }
+                    }
+                ))
+                .disabled(!inputsEnabled)
+                if state.reminderEnabled {
+                    DatePicker("Reminder time", selection: reminderDate, displayedComponents: .hourAndMinute)
+                        .disabled(!inputsEnabled)
+                    Text(reminderHint).font(.footnote).foregroundStyle(.secondary)
+                    if notificationsDenied {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(deniedNote).font(.footnote).foregroundStyle(.red)
+                            Button("Open Settings") {
+                                if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                            }
+                            .font(.footnote)
+                        }
+                    }
+                }
             }
             Section("Icon") { IconGrid(state: state, onEvent: send).disabled(!inputsEnabled) }
         }

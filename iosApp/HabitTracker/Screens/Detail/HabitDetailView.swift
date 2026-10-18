@@ -119,7 +119,7 @@ private struct DetailBody: View {
                     .frame(width: iconSize)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(habit.name).font(.title2.bold()).foregroundStyle(color)
-                    Text(scheduleSummary(habit.currentSchedule.days) + (habit.isArchived ? " · Archived" : ""))
+                    Text(scheduleSummary(habit.currentSchedule.days) + reminderSuffix(habit.reminderTime) + (habit.isArchived ? " · Archived" : ""))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

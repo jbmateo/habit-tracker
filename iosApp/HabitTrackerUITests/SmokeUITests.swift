@@ -78,4 +78,26 @@ final class SmokeUITests: XCTestCase {
             .waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Day 3,'")).firstMatch.exists)
     }
+
+    @MainActor
+    func testReminderToggleShowsTimePicker() {
+        let app = launchFresh()
+        let add = app.buttons["Create your first habit"]
+        XCTAssertTrue(add.waitForExistence(timeout: 10))
+        add.tap()
+        let toggle = app.switches["Remind me"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10), "reminder toggle missing")
+        XCTAssertFalse(app.datePickers.firstMatch.exists)
+        toggle.switches.firstMatch.swipeRight()
+        // First use asks for notification permission; accept it if the system alert appears.
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons["Allow"]
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+        // The hint only shows once the reminder is on.
+        XCTAssertTrue(
+            app.staticTexts["Only on scheduled days. Skipped if you've already done it."].waitForExistence(timeout: 10),
+            "reminder did not switch on"
+        )
+        XCTAssertTrue(app.datePickers.firstMatch.exists, "time picker missing\n\(app.debugDescription)")
+    }
 }

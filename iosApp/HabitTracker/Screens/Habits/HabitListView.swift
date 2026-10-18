@@ -97,7 +97,7 @@ private struct HabitListContent: View {
                 RowIcon(iconKey: habit.iconKey, colorKey: habit.category.colorKey)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(habit.name).font(.body)
-                    Text(scheduleSummary(habit.currentSchedule.days)).font(.footnote).foregroundStyle(.secondary)
+                    Text(scheduleSummary(habit.currentSchedule.days) + reminderSuffix(habit.reminderTime)).font(.footnote).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
@@ -107,7 +107,7 @@ private struct HabitListContent: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(habit.name)
-        .accessibilityValue(scheduleSummary(habit.currentSchedule.days))
+        .accessibilityValue(scheduleSummary(habit.currentSchedule.days) + reminderSuffix(habit.reminderTime))
         .accessibilityAddTraits(.isButton)
     }
 }
