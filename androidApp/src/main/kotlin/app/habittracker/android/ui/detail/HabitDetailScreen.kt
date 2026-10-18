@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.habittracker.android.ui.common.MonthGrid
 import app.habittracker.android.ui.common.StatTile
+import app.habittracker.android.ui.common.completionColorKey
 import app.habittracker.android.ui.common.StreakBandBackground
 import app.habittracker.presentation.calendar.StreakBand
 import app.habittracker.android.ui.common.MonthHeader
@@ -124,7 +125,7 @@ private fun DetailContent(state: HabitDetailUiState.Content, onEvent: (HabitDeta
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             StatTile("🔥 ${detail.stats.currentStreak}", "Current streak", "orange", Modifier.weight(1f))
             StatTile("${detail.stats.bestStreak}", "Best streak", "purple", Modifier.weight(1f))
-            StatTile(detail.stats.completionRate?.let { "${(it * 100).roundToInt()}%" } ?: "—", "Completion", "blue", Modifier.weight(1f))
+            StatTile(detail.stats.completionRate?.let { "${(it * 100).roundToInt()}%" } ?: "—", "Completion", completionColorKey(detail.stats.completionRate), Modifier.weight(1f))
         }
         MonthHeader(
             month = detail.month,

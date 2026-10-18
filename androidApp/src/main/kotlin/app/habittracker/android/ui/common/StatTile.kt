@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.habittracker.android.ui.theme.categoryColor
+import app.habittracker.domain.logic.completionLevel
+import app.habittracker.domain.model.CompletionLevel
 
 /** Value-over-label stat tile, tinted with the palette color [colorKey]; used by the calendar and habit detail. */
 @Composable
@@ -24,4 +26,12 @@ fun StatTile(value: String, label: String, colorKey: String, modifier: Modifier 
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+/** Palette key for a completion rate: green ≥ 80%, amber (yellow) 50–79%, red < 50%, gray without data. */
+fun completionColorKey(rate: Double?): String = when (completionLevel(rate)) {
+    CompletionLevel.Good -> "green"
+    CompletionLevel.Fair -> "amber"
+    CompletionLevel.Low -> "red"
+    null -> "gray"
 }

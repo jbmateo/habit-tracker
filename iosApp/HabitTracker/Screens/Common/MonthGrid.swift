@@ -108,3 +108,13 @@ struct StatTile: View {
         .accessibilityElement(children: .combine)
     }
 }
+
+/// Palette key for a completion rate: green ≥ 80%, amber (yellow) 50–79%, red < 50%, gray without data.
+func completionColorKey(_ rate: KotlinDouble?) -> String {
+    guard let level = CompletionLevelsKt.completionLevel(rate: rate) else { return "gray" }
+    switch level {
+    case .good: return "green"
+    case .fair: return "amber"
+    case .low: return "red"
+    }
+}

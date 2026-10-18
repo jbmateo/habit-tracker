@@ -181,7 +181,7 @@ private struct MonthSummary: View {
             StatTile(
                 value: calendar.completionRate.map { "\(Int(($0.doubleValue * 100).rounded()))%" } ?? "—",
                 label: "Completion",
-                colorKey: "blue"
+                colorKey: completionColorKey(calendar.completionRate)
             )
             StatTile(value: "\(calendar.longestPerfectRun)", label: "Longest run", colorKey: "purple")
         }

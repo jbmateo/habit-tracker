@@ -44,6 +44,7 @@ import app.habittracker.android.ui.common.HabitRow
 import app.habittracker.android.ui.common.MonthGrid
 import app.habittracker.android.ui.common.MonthHeader
 import app.habittracker.android.ui.common.StatTile
+import app.habittracker.android.ui.common.completionColorKey
 import app.habittracker.android.ui.common.StreakBandBackground
 import app.habittracker.android.ui.common.domainErrorMessage
 import app.habittracker.android.ui.common.showReplacing
@@ -199,7 +200,7 @@ private fun MonthSummary(calendar: MonthCalendar, modifier: Modifier = Modifier)
         StatTile(
             calendar.completionRate?.let { "${(it * 100).roundToInt()}%" } ?: "—",
             "Completion",
-            "blue",
+            completionColorKey(calendar.completionRate),
             Modifier.weight(1f),
         )
         StatTile("${calendar.longestPerfectRun}", "Longest run", "purple", Modifier.weight(1f))

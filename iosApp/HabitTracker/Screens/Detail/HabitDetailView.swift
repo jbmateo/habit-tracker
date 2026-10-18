@@ -130,7 +130,7 @@ private struct DetailBody: View {
                 StatTile(
                     value: state.detail.stats.completionRate.map { "\(Int(($0.doubleValue * 100).rounded()))%" } ?? "—",
                     label: "Completion",
-                    colorKey: "blue"
+                    colorKey: completionColorKey(state.detail.stats.completionRate)
                 )
             }
             MonthHeader(
