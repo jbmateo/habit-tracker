@@ -27,12 +27,14 @@ import app.habittracker.domain.usecase.UpdateHabit
 import app.habittracker.presentation.calendar.CalendarViewModel
 import app.habittracker.presentation.categories.CategoryListViewModel
 import app.habittracker.presentation.dashboard.DashboardViewModel
+import app.habittracker.presentation.detail.HabitDetailViewModel
 import app.habittracker.presentation.habits.HabitListViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import org.koin.core.module.Module
+import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
@@ -79,5 +81,6 @@ class KoinGraphTest {
         assertNotNull(koin.get<CalendarViewModel>())
         assertNotNull(koin.get<HabitListViewModel>())
         assertNotNull(koin.get<CategoryListViewModel>())
+        assertNotNull(koin.get<HabitDetailViewModel> { parametersOf("some-id") })
     }
 }

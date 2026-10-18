@@ -9,6 +9,8 @@ import app.habittracker.domain.usecase.MonthCalendar
 import app.habittracker.domain.usecase.ObserveDayDetail
 import app.habittracker.domain.usecase.ObserveMonthCalendar
 import app.habittracker.domain.usecase.ToggleCompletion
+import app.habittracker.presentation.leadingBlanks
+import app.habittracker.presentation.toYearMonth
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -27,7 +29,6 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.YearMonth
-import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 
@@ -60,7 +61,7 @@ class CalendarViewModel(
         combine(monthCalendar, selectedDetail, clock.todayFlow) { (m, calendar), selected, today ->
             CalendarUiState(
                 month = m,
-                leadingBlanks = m.firstDay.dayOfWeek.isoDayNumber - 1,
+                leadingBlanks = m.leadingBlanks,
                 calendar = calendar,
                 selected = selected,
                 canGoNext = m < today.toYearMonth(),
@@ -98,8 +99,6 @@ class CalendarViewModel(
 
     private fun initialState(): CalendarUiState {
         val m = month.value
-        return CalendarUiState(m, m.firstDay.dayOfWeek.isoDayNumber - 1, null, null, canGoNext = false)
+        return CalendarUiState(m, m.leadingBlanks, null, null, canGoNext = false)
     }
 }
-
-private fun LocalDate.toYearMonth(): YearMonth = YearMonth(year, month)

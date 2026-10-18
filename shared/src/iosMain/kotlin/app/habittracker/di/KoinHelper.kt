@@ -3,7 +3,9 @@ package app.habittracker.di
 import app.habittracker.presentation.calendar.CalendarViewModel
 import app.habittracker.presentation.categories.CategoryListViewModel
 import app.habittracker.presentation.dashboard.DashboardViewModel
+import app.habittracker.presentation.detail.HabitDetailViewModel
 import app.habittracker.presentation.habits.HabitListViewModel
+import org.koin.core.parameter.parametersOf
 import org.koin.mp.KoinPlatformTools
 
 /** Entry point for the iOS app. Per-screen handle factories are added alongside each ViewModel. */
@@ -24,4 +26,7 @@ object KoinHelper {
 
     fun categoryList(): ViewModelHandle<CategoryListViewModel> =
         handle { KoinPlatformTools.defaultContext().get().get<CategoryListViewModel>() }
+
+    fun habitDetail(id: String): ViewModelHandle<HabitDetailViewModel> =
+        handle { KoinPlatformTools.defaultContext().get().get<HabitDetailViewModel> { parametersOf(id) } }
 }
