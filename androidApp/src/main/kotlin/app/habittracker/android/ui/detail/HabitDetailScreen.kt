@@ -43,13 +43,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.habittracker.android.ui.common.MonthGrid
+import app.habittracker.android.ui.common.StreakBandBackground
+import app.habittracker.presentation.calendar.StreakBand
 import app.habittracker.android.ui.common.MonthHeader
 import app.habittracker.android.ui.common.domainErrorMessage
 import app.habittracker.android.ui.common.scheduleSummary
 import app.habittracker.android.ui.common.showReplacing
 import app.habittracker.android.ui.icons.habitIcon
 import app.habittracker.android.ui.theme.categoryColor
-import app.habittracker.android.ui.theme.categoryOnColor
 import app.habittracker.domain.usecase.HabitDayState
 import app.habittracker.presentation.detail.HabitDetailEffect
 import app.habittracker.presentation.detail.HabitDetailEvent
@@ -107,7 +108,6 @@ private fun DetailContent(state: HabitDetailUiState.Content, onEvent: (HabitDeta
     val habit = detail.habit
     val dark = isSystemInDarkTheme()
     val color = categoryColor(habit.category.colorKey, dark)
-    val onColor = categoryOnColor(habit.category.colorKey, dark)
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -134,7 +134,12 @@ private fun DetailContent(state: HabitDetailUiState.Content, onEvent: (HabitDeta
         MonthGrid(
             month = detail.month,
             leadingBlanks = state.leadingBlanks,
-            cells = detail.days.map { (date, dayState) -> @Composable { HabitDayCell(date.day, dayState, color, onColor) } },
+            cells = detail.days.mapIndexed { i, (date, dayState) ->
+                @Composable {
+                    val band = state.bands.getOrElse(i) { StreakBand.None }
+                    HabitDayCell(date.day, dayState, band, habit.category.colorKey, color)
+                }
+            },
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 24.dp)) {
             OutlinedButton(onClick = { onEvent(HabitDetailEvent.EditClicked) }) { Text("Edit") }
@@ -175,7 +180,7 @@ private fun StatTile(value: String, label: String, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun HabitDayCell(day: Int, state: HabitDayState, color: Color, onColor: Color) {
+private fun HabitDayCell(day: Int, state: HabitDayState, band: StreakBand, colorKey: String, color: Color) {
     val description = when (state) {
         HabitDayState.Done -> "done"
         HabitDayState.Missed -> "missed"
@@ -184,6 +189,8 @@ private fun HabitDayCell(day: Int, state: HabitDayState, color: Color, onColor: 
         HabitDayState.Future -> "upcoming"
     }
     val dim = state == HabitDayState.NotDue || state == HabitDayState.Future
+    Box(Modifier.fillMaxSize()) {
+    StreakBandBackground(band, colorKey)
     Box(
         Modifier
             .padding(4.dp)
@@ -191,10 +198,9 @@ private fun HabitDayCell(day: Int, state: HabitDayState, color: Color, onColor: 
             .alpha(if (dim) 0.4f else 1f)
             .then(
                 when (state) {
-                    HabitDayState.Done -> Modifier.background(color, CircleShape)
                     HabitDayState.Missed -> Modifier.background(MaterialTheme.colorScheme.error.copy(alpha = 0.2f), CircleShape)
                     HabitDayState.Pending -> Modifier.border(1.5.dp, color, CircleShape)
-                    HabitDayState.NotDue, HabitDayState.Future -> Modifier
+                    HabitDayState.Done, HabitDayState.NotDue, HabitDayState.Future -> Modifier
                 },
             )
             .semantics { contentDescription = "Day $day, $description" },
@@ -204,10 +210,10 @@ private fun HabitDayCell(day: Int, state: HabitDayState, color: Color, onColor: 
             "$day",
             style = MaterialTheme.typography.labelMedium,
             color = when (state) {
-                HabitDayState.Done -> onColor
                 HabitDayState.Missed -> MaterialTheme.colorScheme.error
                 else -> MaterialTheme.colorScheme.onSurface
             },
         )
+    }
     }
 }

@@ -24,6 +24,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.YearMonth
+import app.habittracker.domain.model.Completion
+import app.habittracker.presentation.calendar.StreakBand
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -158,6 +160,20 @@ class HabitDetailViewModelTest {
                 vm.onEvent(HabitDetailEvent.ArchiveToggled)
                 assertEquals(HabitDetailEffect.ShowError("disk full"), awaitItem())
             }
+        }
+    }
+
+    @Test fun exposesHabitStreakBandsAlignedWithDays() = runTest {
+        // Done Mon 12 – Wed 14 and Fri 16; today (Sun 18) not yet done.
+        store.completions.value = listOf("12", "13", "14", "16").map { Completion("a", date("2026-10-$it")) }
+        vm().uiState.test {
+            val s = content(YearMonth(2026, 10)) { it.bands.isNotEmpty() }
+            assertEquals(s.detail.days.size, s.bands.size)
+            assertEquals(
+                listOf(StreakBand.Start, StreakBand.Middle, StreakBand.End, StreakBand.None, StreakBand.Single),
+                s.bands.subList(11, 16),
+            )
+            assertEquals(StreakBand.None, s.bands[17])
         }
     }
 }

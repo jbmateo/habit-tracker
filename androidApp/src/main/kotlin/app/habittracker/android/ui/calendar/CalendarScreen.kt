@@ -3,7 +3,6 @@ package app.habittracker.android.ui.calendar
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,9 +43,9 @@ import app.habittracker.android.ui.common.CategoryHeader
 import app.habittracker.android.ui.common.HabitRow
 import app.habittracker.android.ui.common.MonthGrid
 import app.habittracker.android.ui.common.MonthHeader
+import app.habittracker.android.ui.common.StreakBandBackground
 import app.habittracker.android.ui.common.domainErrorMessage
 import app.habittracker.android.ui.common.showReplacing
-import app.habittracker.android.ui.theme.categoryColor
 import app.habittracker.domain.model.DayStatus
 import app.habittracker.domain.usecase.CalendarDay
 import app.habittracker.domain.usecase.DayDetail
@@ -117,35 +116,10 @@ private fun CalendarContent(state: CalendarUiState, onEvent: (CalendarEvent) -> 
     }
 }
 
-/** Soft orange band behind consecutive Perfect days; rounded only on the band's outer ends. */
-@Composable
-private fun StreakBandBackground(band: StreakBand) {
-    if (band == StreakBand.None) return
-    val pill = 50
-    val shape = when (band) {
-        StreakBand.Single -> RoundedCornerShape(percent = pill)
-        StreakBand.Start -> RoundedCornerShape(topStartPercent = pill, bottomStartPercent = pill)
-        StreakBand.End -> RoundedCornerShape(topEndPercent = pill, bottomEndPercent = pill)
-        else -> RoundedCornerShape(0)
-    }
-    val dark = isSystemInDarkTheme()
-    val tint = categoryColor("orange", dark).copy(alpha = if (dark) 0.55f else 0.25f)
-    Box(
-        Modifier
-            .fillMaxSize()
-            .padding(vertical = 3.dp)
-            .padding(
-                start = if (band == StreakBand.Single || band == StreakBand.Start) 3.dp else 0.dp,
-                end = if (band == StreakBand.Single || band == StreakBand.End) 3.dp else 0.dp,
-            )
-            .background(tint, shape),
-    )
-}
-
 @Composable
 private fun DayCell(day: CalendarDay, band: StreakBand, selected: Boolean, onClick: () -> Unit) {
     Box(Modifier.fillMaxSize()) {
-        StreakBandBackground(band)
+        StreakBandBackground(band, colorKey = "orange")
         DayCellContent(day, selected, onClick)
     }
 }

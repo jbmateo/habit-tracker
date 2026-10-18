@@ -94,6 +94,12 @@ private struct DetailBody: View {
     }
 
     /// Kotlin `List<Pair<LocalDate, HabitDayState>>` as plain values; the enum is bridged by SKIE.
+    /// Streak-band position for day-of-month `day`; `state.bands` is aligned with `detail.days`.
+    private func band(forDay day: Int) -> StreakBand {
+        let bands = kotlinList(state.bands, as: StreakBand.self)
+        return bands.indices.contains(day - 1) ? bands[day - 1] : .none
+    }
+
     private var dayCells: [DayCellData] {
         let pairs = kotlinList(state.detail.days, as: KotlinPair<Kotlinx_datetimeLocalDate, __HabitDayState>.self)
         let cells = pairs.compactMap { pair -> DayCellData? in
@@ -137,7 +143,7 @@ private struct DetailBody: View {
                 leadingBlanks: Int(state.leadingBlanks),
                 items: dayCells
             ) { cell in
-                HabitDayCell(day: cell.day, state: cell.state, color: color, onColor: Palette.onColor(habit.category.colorKey))
+                HabitDayCell(day: cell.day, state: cell.state, band: band(forDay: cell.day), colorKey: habit.category.colorKey, color: color)
             }
             HStack(spacing: 8) {
                 Button("Edit") { onEvent(HabitDetailEventEditClicked.shared) }
@@ -153,8 +159,9 @@ private struct DetailBody: View {
 private struct HabitDayCell: View {
     let day: Int
     let state: HabitDayState
+    let band: StreakBand
+    let colorKey: String
     let color: Color
-    let onColor: Color
 
     var body: some View {
         Text("\(day)")
@@ -164,6 +171,7 @@ private struct HabitDayCell: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background { shape }
             .padding(3)
+            .background(StreakBandBackground(band: band, colorKey: colorKey))
             .opacity(state == .notDue || state == .future ? 0.4 : 1)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Day \(day), \(describe)")
@@ -172,16 +180,14 @@ private struct HabitDayCell: View {
     @ViewBuilder
     private var shape: some View {
         switch state {
-        case .done: Circle().fill(color)
         case .missed: Circle().fill(Color.red.opacity(0.2))
         case .pending: Circle().strokeBorder(color, lineWidth: 1.5)
-        case .notDue, .future: Color.clear
+        case .done, .notDue, .future: Color.clear
         }
     }
 
     private var foreground: Color {
         switch state {
-        case .done: onColor
         case .missed: .red
         default: .primary
         }

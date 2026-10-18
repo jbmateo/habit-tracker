@@ -2,6 +2,7 @@ package app.habittracker.presentation.detail
 
 import app.habittracker.domain.model.DomainError
 import app.habittracker.domain.usecase.HabitDetail
+import app.habittracker.presentation.calendar.StreakBand
 
 sealed interface HabitDetailUiState {
     data object Loading : HabitDetailUiState
@@ -12,12 +13,14 @@ sealed interface HabitDetailUiState {
     /**
      * @property leadingBlanks empty grid cells before the 1st, Monday-first (Monday = 0).
      * @property canGoNext `true` only when the shown month is before the current month.
+     * @property bands streak-band position per day, aligned with `detail.days`.
      */
     data class Content(
         val detail: HabitDetail,
         val leadingBlanks: Int,
         val canGoNext: Boolean,
         val confirmingDelete: Boolean,
+        val bands: List<StreakBand> = emptyList(),
     ) : HabitDetailUiState
 }
 

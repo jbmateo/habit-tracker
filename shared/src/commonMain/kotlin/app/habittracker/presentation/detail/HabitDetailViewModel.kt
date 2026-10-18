@@ -9,6 +9,7 @@ import app.habittracker.domain.usecase.DeleteHabit
 import app.habittracker.domain.usecase.HabitDetail
 import app.habittracker.domain.usecase.ObserveHabitDetail
 import app.habittracker.domain.usecase.UnarchiveHabit
+import app.habittracker.presentation.calendar.habitStreakBands
 import app.habittracker.presentation.leadingBlanks
 import app.habittracker.presentation.toYearMonth
 import kotlinx.coroutines.CancellationException
@@ -61,6 +62,7 @@ class HabitDetailViewModel(
                     leadingBlanks = detail.month.leadingBlanks,
                     canGoNext = detail.month < today.toYearMonth(),
                     confirmingDelete = confirming,
+                    bands = habitStreakBands(detail.days),
                 )
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HabitDetailUiState.Loading)

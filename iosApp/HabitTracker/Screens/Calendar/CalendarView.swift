@@ -111,7 +111,7 @@ private struct DayCell: View {
                     .strokeBorder(border, lineWidth: selected ? 2 : 1)
             )
             .padding(2)
-            .background(StreakBandBackground(band: band))
+            .background(StreakBandBackground(band: band, colorKey: "orange"))
             .contentShape(RoundedRectangle(cornerRadius: 10))
             .opacity(isFuture ? 0.4 : 1)
         }
@@ -152,32 +152,6 @@ private struct DayCell: View {
         case .inProgress(let s): "\(s.done) of \(s.due) done, today"
         case .partial(let s): "\(s.done) of \(s.due) done"
         case .missed: "missed"
-        }
-    }
-}
-
-/// Soft orange band behind consecutive Perfect days; rounded only on the band's outer ends.
-private struct StreakBandBackground: View {
-    let band: StreakBand
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        if band != .none {
-            GeometryReader { geo in
-                let radius = (geo.size.height - 6) / 2
-                let roundStart = band == .single || band == .start
-                let roundEnd = band == .single || band == .end
-                UnevenRoundedRectangle(
-                    topLeadingRadius: roundStart ? radius : 0,
-                    bottomLeadingRadius: roundStart ? radius : 0,
-                    bottomTrailingRadius: roundEnd ? radius : 0,
-                    topTrailingRadius: roundEnd ? radius : 0
-                )
-                .fill(Palette.color("orange").opacity(colorScheme == .dark ? 0.55 : 0.25))
-                .padding(.vertical, 3)
-                .padding(.leading, roundStart ? 3 : 0)
-                .padding(.trailing, roundEnd ? 3 : 0)
-            }
         }
     }
 }
