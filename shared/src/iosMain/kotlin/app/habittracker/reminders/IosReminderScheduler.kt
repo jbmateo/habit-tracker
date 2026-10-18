@@ -12,4 +12,8 @@ class IosReminderScheduler(private val gateway: NotificationCenterGateway) : Rem
         gateway.remove(stale.toList())
         reminders.filter { it.id !in pending || it.id in stale }.forEach(gateway::add)
     }
+
+    override suspend fun clearDelivered(keep: Set<String>) {
+        gateway.removeDelivered(gateway.deliveredIds().filter { it.startsWith("habit:") && it !in keep })
+    }
 }

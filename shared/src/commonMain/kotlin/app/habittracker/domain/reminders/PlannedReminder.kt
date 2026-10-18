@@ -42,3 +42,6 @@ object ReminderEmoji {
 
     fun forIconKey(key: String): String = byKey[key] ?: "✅"
 }
+
+/** Notification id for [habitId]'s reminder on [date]. */
+fun reminderId(habitId: String, date: LocalDate): String = "habit:$habitId@$date"

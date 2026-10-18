@@ -8,14 +8,17 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class IosReminderSchedulerTest {
-    private class FakeGateway(initial: Map<String, String>) : NotificationCenterGateway {
+    private class FakeGateway(initial: Map<String, String>, delivered: Set<String> = emptySet()) : NotificationCenterGateway {
         val pending = initial.toMutableMap()
+        val delivered = delivered.toMutableSet()
         val added = mutableListOf<String>()
         val removed = mutableListOf<String>()
         override suspend fun pendingFingerprints(): Map<String, String> = pending.toMap()
         override fun add(reminder: PlannedReminder) { added += reminder.id; pending[reminder.id] = reminder.fingerprint }
         override fun remove(ids: List<String>) { removed += ids; ids.forEach(pending::remove) }
         override fun postNow(title: String, body: String) = Unit
+        override suspend fun deliveredIds(): Set<String> = delivered.toSet()
+        override fun removeDelivered(ids: List<String>) { delivered -= ids.toSet() }
     }
 
     private fun r(habit: String, day: Int, hour: Int = 9) =
@@ -35,5 +38,11 @@ class IosReminderSchedulerTest {
         assertEquals(listOf(r("a", 14).id), gateway.removed)
         assertEquals(listOf(r("a", 14).id), gateway.added)
         assertEquals(r("a", 14, hour = 20).fingerprint, gateway.pending.getValue(r("a", 14).id))
+    }
+
+    @Test fun clearDeliveredRemovesSettledReminderNotificationsOnly() = runTest {
+        val gateway = FakeGateway(emptyMap(), delivered = setOf(r("a", 13).id, r("a", 14).id, r("b", 14).id, "habit-notice"))
+        IosReminderScheduler(gateway).clearDelivered(keep = setOf(r("a", 14).id))
+        assertEquals(setOf(r("a", 14).id, "habit-notice"), gateway.delivered)
     }
 }

@@ -15,4 +15,12 @@ class FakeReminderScheduler : ReminderScheduler {
         failNext?.let { failNext = null; throw it }
         scheduled = reminders
     }
+
+    /** The ids passed to the last [clearDelivered] call. */
+    var keptDelivered: Set<String>? = null
+        private set
+
+    override suspend fun clearDelivered(keep: Set<String>) {
+        keptDelivered = keep
+    }
 }

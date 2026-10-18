@@ -6,6 +6,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.NSDateComponents
 import platform.UserNotifications.UNCalendarNotificationTrigger
 import platform.UserNotifications.UNMutableNotificationContent
+import platform.UserNotifications.UNNotification
 import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNUserNotificationCenter
@@ -18,6 +19,9 @@ interface NotificationCenterGateway {
     fun add(reminder: PlannedReminder)
     fun remove(ids: List<String>)
     fun postNow(title: String, body: String)
+    /** Ids of notifications currently shown in Notification Center. */
+    suspend fun deliveredIds(): Set<String>
+    fun removeDelivered(ids: List<String>)
 }
 
 internal const val REMINDER_CATEGORY = "HABIT_REMINDER"
@@ -64,6 +68,16 @@ class UserNotificationCenterGateway(
 
     override fun remove(ids: List<String>) {
         if (ids.isNotEmpty()) center.removePendingNotificationRequestsWithIdentifiers(ids)
+    }
+
+    override suspend fun deliveredIds(): Set<String> = suspendCancellableCoroutine { cont ->
+        center.getDeliveredNotificationsWithCompletionHandler { notifications ->
+            cont.resume(notifications.orEmpty().filterIsInstance<UNNotification>().map { it.request.identifier }.toSet())
+        }
+    }
+
+    override fun removeDelivered(ids: List<String>) {
+        if (ids.isNotEmpty()) center.removeDeliveredNotificationsWithIdentifiers(ids)
     }
 
     override fun postNow(title: String, body: String) {

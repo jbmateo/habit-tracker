@@ -20,7 +20,12 @@ internal const val EXTRA_HABIT_NAME = "habitName"
 internal const val EXTRA_DATE = "date"
 internal const val EXTRA_TITLE = "title"
 internal const val EXTRA_BODY = "body"
-internal const val EXTRA_NOTIFICATION_ID = "notificationId"
+
+/** Reminder notifications use (tag = reminder id, id = this), so two reminders never share a notification slot. */
+internal const val REMINDER_NOTIFICATION_ID = 1
+internal const val REMINDER_TAG_PREFIX = "habit:"
+/** The "Couldn't mark" notice uses its own tag so clearing settled reminders leaves it alone. */
+internal const val NOTICE_TAG_PREFIX = "notice:"
 
 fun ensureReminderChannel(context: Context) {
     val manager = context.getSystemService(NotificationManager::class.java)
@@ -29,7 +34,8 @@ fun ensureReminderChannel(context: Context) {
     )
 }
 
-internal fun notificationIdFor(reminderId: String): Int = reminderId.hashCode()
+/** PendingIntent request code; intents are told apart by their data URI, so a hash collision is harmless. */
+internal fun requestCodeFor(reminderId: String): Int = reminderId.hashCode()
 
 /** Broadcast that fires a reminder; the data URI makes each reminder's intent distinct for cancelling. */
 internal fun reminderIntent(context: Context, reminderId: String): Intent =
@@ -46,7 +52,7 @@ class RealAlarmSink(private val context: Context) : AlarmSink {
             .putExtra(EXTRA_TITLE, reminder.title)
             .putExtra(EXTRA_BODY, reminder.body)
         val pending = PendingIntent.getBroadcast(
-            context, notificationIdFor(reminder.id), intent,
+            context, requestCodeFor(reminder.id), intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val at = LocalDateTime(reminder.date, reminder.time).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
@@ -60,7 +66,7 @@ class RealAlarmSink(private val context: Context) : AlarmSink {
 
     override fun cancel(id: String) {
         val pending = PendingIntent.getBroadcast(
-            context, notificationIdFor(id), reminderIntent(context, id),
+            context, requestCodeFor(id), reminderIntent(context, id),
             PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
         ) ?: return
         alarms.cancel(pending)
@@ -84,3 +90,13 @@ class PrefsReminderStore(context: Context) : ScheduledReminderStore {
 /** POST_NOTIFICATIONS exists only from API 33; below that it always reads as denied, so only the app-level switch counts. */
 fun mayPostNotifications(sdkInt: Int, permissionGranted: Boolean, appNotificationsEnabled: Boolean): Boolean =
     appNotificationsEnabled && (sdkInt < Build.VERSION_CODES.TIRAMISU || permissionGranted)
+
+/** Reminder notifications are posted with their reminder id as the tag, so they can be found and dismissed here. */
+class NotificationShade(context: Context) : DeliveredReminders {
+    private val manager = context.getSystemService(NotificationManager::class.java)
+
+    override fun activeIds(): Set<String> =
+        manager.activeNotifications.mapNotNull { it.tag }.filter { it.startsWith(REMINDER_TAG_PREFIX) }.toSet()
+
+    override fun dismiss(id: String) = manager.cancel(id, REMINDER_NOTIFICATION_ID)
+}

@@ -29,6 +29,14 @@ object KoinHelper {
         koin.get<ReminderSync>().start(MainScope())
     }
 
+    /**
+     * Re-plans reminders now. Called when the app comes to the foreground: notification permission may have been
+     * turned on in Settings, and requests added while it was off were dropped.
+     */
+    suspend fun syncReminders() {
+        KoinPlatformTools.defaultContext().getOrNull()?.get<ReminderSync>()?.syncNow()
+    }
+
     fun dashboard(): ViewModelHandle<DashboardViewModel> =
         handle { KoinPlatformTools.defaultContext().get().get<DashboardViewModel>() }
 

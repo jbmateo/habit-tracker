@@ -4,6 +4,7 @@ import Shared
 @main
 struct HabitTrackerApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         #if DEBUG
@@ -24,6 +25,10 @@ struct HabitTrackerApp: App {
     var body: some Scene {
         WindowGroup {
             RootTabView()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // Back from Settings with notifications turned on: requests added while they were off were dropped.
+            if phase == .active { Task { try? await KoinHelper.shared.syncReminders() } }
         }
     }
 }

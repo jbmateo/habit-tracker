@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.LocalDateTime
 
 /**
@@ -35,12 +37,21 @@ class ReminderSync(
             .onEach { (h, c) -> schedule(h, c) }
             .launchIn(scope)
 
-    /** One-shot re-plan (app start, device boot, after "Mark done"). */
-    suspend fun syncNow() = schedule(habits.observeAll().first(), completions.observeAll().first())
+    /** One-shot re-plan (app start or foreground, device boot, after "Mark done", when a reminder fires). */
+    suspend fun syncNow() = schedule { habits.observeAll().first() to completions.observeAll().first() }
 
-    private suspend fun schedule(habits: List<Habit>, completions: List<Completion>) {
+    // Re-plans can start together (app collector plus a receiver or foreground sync); run them one at a time.
+    private val mutex = Mutex()
+
+    private suspend fun schedule(habits: List<Habit>, completions: List<Completion>) = schedule { habits to completions }
+
+    private suspend fun schedule(read: suspend () -> Pair<List<Habit>, List<Completion>>) = mutex.withLock {
         try {
-            scheduler.replaceAll(planReminders(habits, completions.toIndex(), now()))
+            val (habits, completions) = read()
+            val index = completions.toIndex()
+            val now = now()
+            scheduler.replaceAll(planReminders(habits, index, now))
+            scheduler.clearDelivered(openReminderIds(habits, index, now.date))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

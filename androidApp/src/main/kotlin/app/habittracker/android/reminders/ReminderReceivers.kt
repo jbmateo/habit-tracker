@@ -54,13 +54,11 @@ class ReminderReceiver : BroadcastReceiver(), KoinComponent {
     private fun post(context: Context, intent: Intent) {
         if (!canNotify(context)) return
         val reminderId = intent.data?.lastPathSegment ?: return
-        val notificationId = notificationIdFor(reminderId)
         val markDone = Intent(context, MarkDoneReceiver::class.java)
             .setData(intent.data)
             .putExtras(intent)
-            .putExtra(EXTRA_NOTIFICATION_ID, notificationId)
         val markDonePending = PendingIntent.getBroadcast(
-            context, notificationId, markDone, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            context, requestCodeFor(reminderId), markDone, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
@@ -71,7 +69,7 @@ class ReminderReceiver : BroadcastReceiver(), KoinComponent {
             .addAction(0, "Mark done", markDonePending)
             .build()
         @Suppress("MissingPermission") // checked by canNotify
-        NotificationManagerCompat.from(context).notify(notificationId, notification)
+        NotificationManagerCompat.from(context).notify(reminderId, REMINDER_NOTIFICATION_ID, notification)
     }
 }
 
@@ -81,13 +79,13 @@ class MarkDoneReceiver : BroadcastReceiver(), KoinComponent {
         val habitId = intent.getStringExtra(EXTRA_HABIT_ID) ?: return
         val date = intent.getStringExtra(EXTRA_DATE)?.let(LocalDate::parse) ?: return
         val name = intent.getStringExtra(EXTRA_HABIT_NAME) ?: "habit"
-        val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0)
+        val reminderId = intent.data?.lastPathSegment ?: return
         val pending = goAsync()
         receiverScope.launch {
             try {
                 val ok = runCatching { get<MarkDoneFromReminder>()(habitId, date) is Outcome.Success }.getOrDefault(false)
                 val manager = NotificationManagerCompat.from(context)
-                manager.cancel(notificationId)
+                manager.cancel(reminderId, REMINDER_NOTIFICATION_ID)
                 if (ok) {
                     get<ReminderSync>().syncNow()
                 } else if (canNotify(context)) {
@@ -96,9 +94,10 @@ class MarkDoneReceiver : BroadcastReceiver(), KoinComponent {
                         .setContentTitle("Couldn't mark $name. Open the app.")
                         .setContentIntent(openAppIntent(context))
                         .setAutoCancel(true)
+                        .setSilent(true)
                         .build()
                     @Suppress("MissingPermission") // checked by canNotify
-                    manager.notify(notificationId, notice)
+                    manager.notify(NOTICE_TAG_PREFIX + reminderId, REMINDER_NOTIFICATION_ID, notice)
                 }
             } finally {
                 pending.finish()

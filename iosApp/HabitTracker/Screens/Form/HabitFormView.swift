@@ -27,6 +27,7 @@ private struct HabitFormContent: View {
     /// It is filled from the ViewModel only once, when an edited habit finishes loading.
     @State private var name = ""
     @State private var notificationsDenied = false
+    @Environment(\.scenePhase) private var scenePhase
 
     private var state: HabitFormUiState { host.state }
     private var inputsEnabled: Bool { !state.isLoading && !state.isSaving }
@@ -49,9 +50,13 @@ private struct HabitFormContent: View {
 
     /// Asks once; afterwards reflects the current setting so the denied note can point to Settings.
     private func requestNotificationPermission() async {
-        let center = UNUserNotificationCenter.current()
-        _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
-        let settings = await center.notificationSettings()
+        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+        await refreshNotificationsDenied()
+    }
+
+    /// Read on open too, so editing a habit that already has a reminder shows the note without toggling.
+    private func refreshNotificationsDenied() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
         notificationsDenied = settings.authorizationStatus == .denied
     }
 
@@ -117,6 +122,10 @@ private struct HabitFormContent: View {
         }
         .errorAlert($errorMessage)
         .task { host.start() }
+        .task { await refreshNotificationsDenied() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await refreshNotificationsDenied() } }
+        }
         .task {
             for await effect in host.vm.effects {
                 switch onEnum(of: effect) {

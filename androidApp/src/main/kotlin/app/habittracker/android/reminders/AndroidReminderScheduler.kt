@@ -15,6 +15,12 @@ interface ScheduledReminderStore {
     fun save(scheduled: Map<String, String>)
 }
 
+/** Reminder notifications currently on screen, by reminder id. */
+interface DeliveredReminders {
+    fun activeIds(): Set<String>
+    fun dismiss(id: String)
+}
+
 /**
  * Keeps alarms equal to the planned reminders. Every wanted alarm is set again on each pass,
  * because a reboot or force-stop wipes alarms without touching the store; setting an existing id
@@ -23,11 +29,16 @@ interface ScheduledReminderStore {
 class AndroidReminderScheduler(
     private val alarms: AlarmSink,
     private val store: ScheduledReminderStore,
+    private val delivered: DeliveredReminders,
 ) : ReminderScheduler {
     override suspend fun replaceAll(reminders: List<PlannedReminder>) {
         val wanted = reminders.map { it.id }.toSet()
         store.load().keys.filter { it !in wanted }.forEach(alarms::cancel)
         reminders.forEach(alarms::set)
         store.save(reminders.associate { it.id to it.fingerprint })
+    }
+
+    override suspend fun clearDelivered(keep: Set<String>) {
+        delivered.activeIds().filter { it !in keep }.forEach(delivered::dismiss)
     }
 }

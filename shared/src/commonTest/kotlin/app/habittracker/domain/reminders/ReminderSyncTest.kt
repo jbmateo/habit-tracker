@@ -9,7 +9,14 @@ import app.habittracker.fakes.FakeHabitRepository
 import app.habittracker.fakes.FakeReminderScheduler
 import app.habittracker.fakes.FakeStore
 import app.habittracker.habit
+import app.habittracker.domain.model.Habit
+import app.habittracker.domain.repository.HabitRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -94,5 +101,40 @@ class ReminderSyncTest {
     @Test fun syncNowPlansOnce() = runTest {
         sync.syncNow()
         assertEquals(7, scheduler.scheduled.size)
+    }
+
+    @Test fun deliveredNotificationsOfSettledRemindersAreCleared() = runTest {
+        started()
+        assertEquals(setOf("habit:a@2026-10-13", "habit:a@2026-10-14"), scheduler.keptDelivered)
+        completions.toggle("a", date("2026-10-14")); runCurrent()
+        assertEquals(setOf("habit:a@2026-10-13"), scheduler.keptDelivered)
+    }
+
+    @Test fun concurrentSyncsNeverOverlap() = runTest {
+        val slow = object : ReminderScheduler {
+            var inFlight = 0
+            var maxInFlight = 0
+            override suspend fun replaceAll(reminders: List<PlannedReminder>) {
+                inFlight++
+                maxInFlight = maxOf(maxInFlight, inFlight)
+                delay(100)
+                inFlight--
+            }
+            override suspend fun clearDelivered(keep: Set<String>) = Unit
+        }
+        val sync = ReminderSync(habits, completions, clock, slow) { now }
+        launch { sync.syncNow() }
+        launch { sync.syncNow() }
+        advanceUntilIdle()
+        assertEquals(1, slow.maxInFlight)
+    }
+
+    @Test fun readFailureIsLoggedNotThrown() = runTest {
+        val logged = mutableListOf<String>()
+        val broken = object : HabitRepository by habits {
+            override fun observeAll(): Flow<List<Habit>> = flow { throw IllegalStateException("db closed") }
+        }
+        ReminderSync(broken, completions, clock, scheduler, log = { logged += it }) { now }.syncNow()
+        assertTrue(logged.single().contains("db closed"))
     }
 }

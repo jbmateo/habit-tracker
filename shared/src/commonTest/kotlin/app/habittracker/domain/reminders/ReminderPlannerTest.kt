@@ -87,4 +87,22 @@ class ReminderPlannerTest {
         IconKeys.all.forEach { assertTrue(ReminderEmoji.forIconKey(it).isNotBlank(), "no emoji for $it") }
         assertEquals("🏃", ReminderEmoji.forIconKey("run"))
     }
+
+    @Test fun futureDaysCarryNoStreak() {
+        // Today's streak may be broken by tomorrow, so only today's reminder quotes it.
+        val h = habit("a", created = "2026-10-01", reminder = "09:00")
+        val plan = planReminders(listOf(h), done("a" to "2026-10-12", "a" to "2026-10-13"), now)
+        assertEquals(2, plan.first { it.date == date("2026-10-14") }.streak)
+        assertTrue(plan.filter { it.date > date("2026-10-14") }.all { it.streak == 0 })
+    }
+
+    @Test fun openIdsAreUndoneDueRemindersForTodayAndYesterday() {
+        val habits = listOf(
+            habit("a", created = "2026-10-01", reminder = "09:00"),
+            habit("b", created = "2026-10-01"),
+            habit("c", created = "2026-10-01", reminder = "21:00"),
+        )
+        val open = openReminderIds(habits, done("a" to "2026-10-13"), today = date("2026-10-14"))
+        assertEquals(setOf("habit:a@2026-10-14", "habit:c@2026-10-13", "habit:c@2026-10-14"), open)
+    }
 }
