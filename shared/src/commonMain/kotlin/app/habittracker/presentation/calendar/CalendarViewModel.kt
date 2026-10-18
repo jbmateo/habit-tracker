@@ -65,6 +65,7 @@ class CalendarViewModel(
                 calendar = calendar,
                 selected = selected,
                 canGoNext = m < today.toYearMonth(),
+                bands = calendar?.let { streakBands(it.days) } ?: emptyList(),
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), initialState())
 

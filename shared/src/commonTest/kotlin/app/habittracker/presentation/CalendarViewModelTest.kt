@@ -17,6 +17,8 @@ import app.habittracker.presentation.calendar.CalendarEffect
 import app.habittracker.presentation.calendar.CalendarEvent
 import app.habittracker.presentation.calendar.CalendarUiState
 import app.habittracker.presentation.calendar.CalendarViewModel
+import app.habittracker.presentation.calendar.StreakBand
+import app.habittracker.domain.model.Completion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -147,6 +149,21 @@ class CalendarViewModelTest {
             store.failNextWrite = IllegalStateException("disk full")
             vm.onEvent(CalendarEvent.ToggleHabit("a", date("2026-10-17")))
             assertEquals(CalendarEffect.ShowError("disk full"), awaitItem())
+        }
+    }
+
+    @Test fun exposesStreakBandsAlignedWithDays() = runTest {
+        store.habits.value = listOf(habit("a", created = "2026-10-01"))
+        // Perfect on Mon 12 – Wed 14, and on Fri 16 alone; today (Sun 18) undone.
+        store.completions.value = listOf("12", "13", "14", "16").map { Completion("a", date("2026-10-$it")) }
+        vm().uiState.test {
+            val s = loaded(YearMonth(2026, 10))
+            assertEquals(s.calendar!!.days.size, s.bands.size)
+            assertEquals(
+                listOf(StreakBand.Start, StreakBand.Middle, StreakBand.End, StreakBand.None, StreakBand.Single),
+                s.bands.subList(11, 16),
+            )
+            assertEquals(StreakBand.None, s.bands[17])
         }
     }
 }

@@ -31,7 +31,7 @@ private struct CalendarContent: View {
                         leadingBlanks: Int(state.leadingBlanks),
                         items: kotlinList(calendar.days, as: CalendarDay.self)
                     ) { day in
-                        DayCell(day: day, selected: state.selected?.date == day.date) {
+                        DayCell(day: day, band: band(for: day), selected: state.selected?.date == day.date) {
                             host.vm.onEvent(
                                 event: state.selected?.date == day.date
                                     ? CalendarEventClearSelection.shared
@@ -69,6 +69,13 @@ private struct CalendarContent: View {
         }
     }
 
+    /// Streak-band position for [day]; `state.bands` is aligned with `calendar.days` (day N at index N-1).
+    private func band(for day: CalendarDay) -> StreakBand {
+        let bands = kotlinList(state.bands, as: StreakBand.self)
+        let index = Int(day.date.day) - 1
+        return bands.indices.contains(index) ? bands[index] : .none
+    }
+
     private struct SelectedDone: Equatable {
         let date: Kotlinx_datetimeLocalDate
         let done: Int
@@ -85,6 +92,7 @@ private struct CalendarContent: View {
 
 private struct DayCell: View {
     let day: CalendarDay
+    let band: StreakBand
     let selected: Bool
     let onTap: () -> Void
 
@@ -101,11 +109,12 @@ private struct DayCell: View {
                 RoundedRectangle(cornerRadius: 10)
                     .strokeBorder(border, lineWidth: selected ? 2 : 1)
             )
+            .padding(2)
+            .background(StreakBandBackground(band: band))
             .contentShape(RoundedRectangle(cornerRadius: 10))
             .opacity(isFuture ? 0.4 : 1)
         }
         .buttonStyle(.plain)
-        .padding(2)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Day \(day.date.day), \(describe)")
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
@@ -142,6 +151,32 @@ private struct DayCell: View {
         case .inProgress(let s): "\(s.done) of \(s.due) done, today"
         case .partial(let s): "\(s.done) of \(s.due) done"
         case .missed: "missed"
+        }
+    }
+}
+
+/// Soft orange band behind consecutive Perfect days; rounded only on the band's outer ends.
+private struct StreakBandBackground: View {
+    let band: StreakBand
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        if band != .none {
+            GeometryReader { geo in
+                let radius = (geo.size.height - 12) / 2
+                let roundStart = band == .single || band == .start
+                let roundEnd = band == .single || band == .end
+                UnevenRoundedRectangle(
+                    topLeadingRadius: roundStart ? radius : 0,
+                    bottomLeadingRadius: roundStart ? radius : 0,
+                    bottomTrailingRadius: roundEnd ? radius : 0,
+                    topTrailingRadius: roundEnd ? radius : 0
+                )
+                .fill(Palette.color("orange").opacity(colorScheme == .dark ? 0.35 : 0.25))
+                .padding(.vertical, 6)
+                .padding(.leading, roundStart ? 3 : 0)
+                .padding(.trailing, roundEnd ? 3 : 0)
+            }
         }
     }
 }

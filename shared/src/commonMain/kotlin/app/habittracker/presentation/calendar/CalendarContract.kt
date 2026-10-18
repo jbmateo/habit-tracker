@@ -11,6 +11,7 @@ import kotlinx.datetime.YearMonth
  * @property calendar `null` while the month is loading.
  * @property selected detail of the selected day, or `null` when nothing is selected (or it is loading).
  * @property canGoNext `true` only when [month] is before the current month.
+ * @property bands streak-band position per day, aligned with `calendar.days`; empty while loading.
  */
 data class CalendarUiState(
     val month: YearMonth,
@@ -18,6 +19,7 @@ data class CalendarUiState(
     val calendar: MonthCalendar?,
     val selected: DayDetail?,
     val canGoNext: Boolean,
+    val bands: List<StreakBand> = emptyList(),
 )
 
 sealed interface CalendarEvent {

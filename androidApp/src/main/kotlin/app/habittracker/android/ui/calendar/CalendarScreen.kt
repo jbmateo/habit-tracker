@@ -3,6 +3,7 @@ package app.habittracker.android.ui.calendar
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +46,7 @@ import app.habittracker.android.ui.common.MonthGrid
 import app.habittracker.android.ui.common.MonthHeader
 import app.habittracker.android.ui.common.domainErrorMessage
 import app.habittracker.android.ui.common.showReplacing
+import app.habittracker.android.ui.theme.categoryColor
 import app.habittracker.domain.model.DayStatus
 import app.habittracker.domain.usecase.CalendarDay
 import app.habittracker.domain.usecase.DayDetail
@@ -54,6 +56,7 @@ import app.habittracker.presentation.calendar.CalendarEffect
 import app.habittracker.presentation.calendar.CalendarEvent
 import app.habittracker.presentation.calendar.CalendarUiState
 import app.habittracker.presentation.calendar.CalendarViewModel
+import app.habittracker.presentation.calendar.StreakBand
 import org.koin.androidx.compose.koinViewModel
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
@@ -96,9 +99,10 @@ private fun CalendarContent(state: CalendarUiState, onEvent: (CalendarEvent) -> 
             MonthGrid(
                 month = state.month,
                 leadingBlanks = state.leadingBlanks,
-                cells = calendar.days.map { day ->
+                cells = calendar.days.mapIndexed { i, day ->
                     @Composable {
-                        DayCell(day, selected = state.selected?.date == day.date) {
+                        val band = state.bands.getOrElse(i) { StreakBand.None }
+                        DayCell(day, band, selected = state.selected?.date == day.date) {
                             onEvent(
                                 if (state.selected?.date == day.date) CalendarEvent.ClearSelection
                                 else CalendarEvent.SelectDay(day.date),
@@ -113,8 +117,41 @@ private fun CalendarContent(state: CalendarUiState, onEvent: (CalendarEvent) -> 
     }
 }
 
+/** Soft orange band behind consecutive Perfect days; rounded only on the band's outer ends. */
 @Composable
-private fun DayCell(day: CalendarDay, selected: Boolean, onClick: () -> Unit) {
+private fun StreakBandBackground(band: StreakBand) {
+    if (band == StreakBand.None) return
+    val pill = 50
+    val shape = when (band) {
+        StreakBand.Single -> RoundedCornerShape(percent = pill)
+        StreakBand.Start -> RoundedCornerShape(topStartPercent = pill, bottomStartPercent = pill)
+        StreakBand.End -> RoundedCornerShape(topEndPercent = pill, bottomEndPercent = pill)
+        else -> RoundedCornerShape(0)
+    }
+    val dark = isSystemInDarkTheme()
+    val tint = categoryColor("orange", dark).copy(alpha = if (dark) 0.35f else 0.25f)
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(vertical = 6.dp)
+            .padding(
+                start = if (band == StreakBand.Single || band == StreakBand.Start) 3.dp else 0.dp,
+                end = if (band == StreakBand.Single || band == StreakBand.End) 3.dp else 0.dp,
+            )
+            .background(tint, shape),
+    )
+}
+
+@Composable
+private fun DayCell(day: CalendarDay, band: StreakBand, selected: Boolean, onClick: () -> Unit) {
+    Box(Modifier.fillMaxSize()) {
+        StreakBandBackground(band)
+        DayCellContent(day, selected, onClick)
+    }
+}
+
+@Composable
+private fun DayCellContent(day: CalendarDay, selected: Boolean, onClick: () -> Unit) {
     val status = day.status
     val primary = MaterialTheme.colorScheme.primary
     val border = when {
