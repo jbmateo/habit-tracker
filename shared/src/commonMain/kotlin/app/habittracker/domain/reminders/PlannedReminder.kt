@@ -24,6 +24,9 @@ data class PlannedReminder(
 
     val body: String
         get() = if (streak > 0) "Time for your habit — keep your 🔥 $streak-day streak going!" else "Time for your habit"
+
+    /** Changes whenever what the user would see changes, so schedulers can replace an outdated notification. */
+    val fingerprint: String get() = "$time|$title|$body"
 }
 
 /** Emoji shown in reminder titles, one per habit icon key. */

@@ -3,6 +3,8 @@ import Shared
 
 @main
 struct HabitTrackerApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
     init() {
         #if DEBUG
         // UI tests pass `-uiTestResetDB` to start from an empty database and `-uiTestToday <yyyy-MM-dd>`

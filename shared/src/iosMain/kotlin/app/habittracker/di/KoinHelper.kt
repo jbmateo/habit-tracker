@@ -7,6 +7,9 @@ import app.habittracker.presentation.dashboard.DashboardViewModel
 import app.habittracker.presentation.detail.HabitDetailViewModel
 import app.habittracker.presentation.form.HabitFormViewModel
 import app.habittracker.presentation.habits.HabitListViewModel
+import app.habittracker.domain.reminders.ReminderSync
+import app.habittracker.reminders.IosReminders
+import kotlinx.coroutines.MainScope
 import kotlinx.datetime.LocalDate
 import org.koin.core.parameter.parametersOf
 import org.koin.mp.KoinPlatformTools
@@ -21,7 +24,9 @@ object KoinHelper {
     fun start(resetDatabase: Boolean = false, fixedToday: String? = null) {
         if (KoinPlatformTools.defaultContext().getOrNull() != null) return
         if (resetDatabase) deleteHabitsDatabase()
-        initKoin(fixedToday = fixedToday?.let(LocalDate::parse))
+        val koin = initKoin(fixedToday = fixedToday?.let(LocalDate::parse)).koin
+        IosReminders.registerCategory()
+        koin.get<ReminderSync>().start(MainScope())
     }
 
     fun dashboard(): ViewModelHandle<DashboardViewModel> =
