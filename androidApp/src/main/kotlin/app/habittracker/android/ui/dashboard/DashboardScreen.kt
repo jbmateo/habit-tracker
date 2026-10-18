@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.habittracker.android.ui.common.HabitRow
 import app.habittracker.android.ui.common.ProgressRing
 import app.habittracker.android.ui.common.StreakCard
+import app.habittracker.android.ui.common.WeekComparisonLine
 import app.habittracker.android.ui.common.domainErrorMessage
 import app.habittracker.android.ui.common.showReplacing
 import app.habittracker.domain.model.TodaySort
@@ -125,6 +126,7 @@ private fun DashboardContent(state: DashboardUiState.Content, celebrations: Int,
                     ProgressRing(dashboard.done, dashboard.due, celebrations)
                     StreakCard(dashboard.streak, Modifier.weight(1f))
                 }
+                WeekComparisonLine(dashboard.week, Modifier.padding(top = 12.dp))
                 if (dashboard.isPerfect) {
                     Text("Perfect day!", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
                 }

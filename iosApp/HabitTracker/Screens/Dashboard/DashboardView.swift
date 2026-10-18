@@ -110,6 +110,7 @@ private struct DashboardContent: View {
                         ProgressRing(done: Int(dashboard.done), due: Int(dashboard.due), celebrateTrigger: celebrations)
                         StreakCard(streak: dashboard.streak)
                     }
+                    WeekComparisonLine(week: dashboard.week)
                     if dashboard.isPerfect {
                         Text("Perfect day!").font(.headline)
                     }

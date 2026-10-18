@@ -13,6 +13,8 @@ import app.habittracker.domain.model.toIndex
 import app.habittracker.domain.repository.CompletionRepository
 import app.habittracker.domain.repository.HabitRepository
 import app.habittracker.domain.time.AppClock
+import app.habittracker.domain.logic.weekComparison
+import app.habittracker.domain.model.WeekComparison
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.LocalDate
@@ -27,6 +29,7 @@ data class TodayDashboard(
     val isPerfect: Boolean,
     val groups: List<CategoryGroup<TodayHabitItem>>,
     val hasAnyHabits: Boolean,
+    val week: WeekComparison,
 )
 
 class ObserveTodayDashboard(
@@ -55,6 +58,7 @@ class ObserveTodayDashboard(
                 isPerfect = dayStatus(today, today, allHabits, index) is DayStatus.Perfect,
                 groups = items.groupByCategory { it.habit.category },
                 hasAnyHabits = allHabits.any { !it.isArchived },
+                week = weekComparison(allHabits, index, today),
             )
         }
 }

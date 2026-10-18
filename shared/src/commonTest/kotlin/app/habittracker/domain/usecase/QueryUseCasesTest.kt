@@ -83,6 +83,10 @@ class QueryUseCasesTest {
             assertTrue(second.isPerfect)
             assertTrue(second.groups.single().items.all { it.isDone })
             assertEquals(1, second.groups.single().items.first().streak)
+            // 2026-01-14 is a Wednesday; habits created on the default 2026-01-05 (Monday).
+            // This week: Mon 12, Tue 13 missed (2 habits × 2 days), today both done → 2/6.
+            assertEquals(2.0 / 6, second.week.thisWeek)
+            assertEquals(0.0, second.week.lastWeek)
             cancelAndIgnoreRemainingEvents()
         }
     }
