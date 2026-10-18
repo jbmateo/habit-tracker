@@ -4,6 +4,7 @@ import app.habittracker.presentation.calendar.CalendarViewModel
 import app.habittracker.presentation.categories.CategoryListViewModel
 import app.habittracker.presentation.dashboard.DashboardViewModel
 import app.habittracker.presentation.detail.HabitDetailViewModel
+import app.habittracker.presentation.form.HabitFormViewModel
 import app.habittracker.presentation.habits.HabitListViewModel
 import org.koin.core.parameter.parametersOf
 import org.koin.mp.KoinPlatformTools
@@ -29,4 +30,7 @@ object KoinHelper {
 
     fun habitDetail(id: String): ViewModelHandle<HabitDetailViewModel> =
         handle { KoinPlatformTools.defaultContext().get().get<HabitDetailViewModel> { parametersOf(id) } }
+
+    fun habitForm(id: String?): ViewModelHandle<HabitFormViewModel> =
+        handle { KoinPlatformTools.defaultContext().get().get<HabitFormViewModel> { parametersOf(*arrayOf<Any?>(id)) } }
 }

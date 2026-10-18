@@ -28,6 +28,7 @@ import app.habittracker.presentation.calendar.CalendarViewModel
 import app.habittracker.presentation.categories.CategoryListViewModel
 import app.habittracker.presentation.dashboard.DashboardViewModel
 import app.habittracker.presentation.detail.HabitDetailViewModel
+import app.habittracker.presentation.form.HabitFormViewModel
 import app.habittracker.presentation.habits.HabitListViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -82,5 +83,7 @@ class KoinGraphTest {
         assertNotNull(koin.get<HabitListViewModel>())
         assertNotNull(koin.get<CategoryListViewModel>())
         assertNotNull(koin.get<HabitDetailViewModel> { parametersOf("some-id") })
+        assertNotNull(koin.get<HabitFormViewModel> { parametersOf(*arrayOf<Any?>(null)) })
+        assertNotNull(koin.get<HabitFormViewModel> { parametersOf("some-id") })
     }
 }
