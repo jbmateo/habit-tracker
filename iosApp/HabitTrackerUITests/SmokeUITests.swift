@@ -66,4 +66,14 @@ final class SmokeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Add habit"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["Stretch"].exists)
     }
+
+    /// Regression: leading blanks and day cells once shared grid ids, hiding days 1..<leadingBlanks.
+    @MainActor
+    func testCalendarShowsFirstDayOfMonth() {
+        let app = launchFresh()
+        app.buttons["Calendar"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Day 1,'")).firstMatch
+            .waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Day 3,'")).firstMatch.exists)
+    }
 }

@@ -136,7 +136,7 @@ private struct DetailBody: View {
                 leadingBlanks: Int(state.leadingBlanks),
                 items: dayCells
             ) { cell in
-                HabitDayCell(day: cell.day, state: cell.state, color: color)
+                HabitDayCell(day: cell.day, state: cell.state, color: color, onColor: Palette.onColor(habit.category.colorKey))
             }
             HStack(spacing: 8) {
                 Button("Edit") { onEvent(HabitDetailEventEditClicked.shared) }
@@ -153,6 +153,7 @@ private struct HabitDayCell: View {
     let day: Int
     let state: HabitDayState
     let color: Color
+    let onColor: Color
 
     var body: some View {
         Text("\(day)")
@@ -179,7 +180,7 @@ private struct HabitDayCell: View {
 
     private var foreground: Color {
         switch state {
-        case .done: .white
+        case .done: onColor
         case .missed: .red
         default: .primary
         }

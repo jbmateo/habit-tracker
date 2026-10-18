@@ -8,6 +8,24 @@ func monthTitle(_ month: Kotlinx_datetimeYearMonth) -> String {
     return date.formatted(.dateTime.month(.wide).year())
 }
 
+/// One slot in the grid. Blanks and days get distinct identities (`id`), otherwise a LazyVGrid treats the two
+/// groups' overlapping integer ids as the same cell and drops days.
+enum MonthGridCell: Identifiable, Equatable {
+    case blank(Int)
+    case day(Int)
+
+    var id: String {
+        switch self {
+        case .blank(let i): "blank-\(i)"
+        case .day(let i): "day-\(i)"
+        }
+    }
+
+    static func build(leadingBlanks: Int, itemCount: Int) -> [MonthGridCell] {
+        (0..<max(leadingBlanks, 0)).map(MonthGridCell.blank) + (0..<itemCount).map(MonthGridCell.day)
+    }
+}
+
 /// Monday-first month grid shared by Calendar and Habit detail. `leadingBlanks` empty cells precede the 1st, as
 /// computed by the ViewModel; [cell] draws one day.
 struct MonthGrid<Item, Cell: View>: View {
@@ -34,11 +52,13 @@ struct MonthGrid<Item, Cell: View>: View {
                 }
             }
             LazyVGrid(columns: columns, spacing: 0) {
-                ForEach(0..<max(leadingBlanks, 0), id: \.self) { _ in
-                    Color.clear.aspectRatio(1, contentMode: .fit).accessibilityHidden(true)
-                }
-                ForEach(items.indices, id: \.self) { index in
-                    cell(items[index]).aspectRatio(1, contentMode: .fit)
+                ForEach(MonthGridCell.build(leadingBlanks: leadingBlanks, itemCount: items.count)) { slot in
+                    switch slot {
+                    case .blank:
+                        Color.clear.aspectRatio(1, contentMode: .fit).accessibilityHidden(true)
+                    case .day(let index):
+                        cell(items[index]).aspectRatio(1, contentMode: .fit)
+                    }
                 }
             }
         }

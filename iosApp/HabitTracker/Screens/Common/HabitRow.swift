@@ -37,7 +37,7 @@ struct HabitRow: View {
             Button(action: onToggle) {
                 Image(systemName: "checkmark")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(isDone ? Color.white : Color.secondary)
+                    .foregroundStyle(isDone ? Palette.onColor(habit.category.colorKey) : Color.secondary)
                     .frame(width: checkSize, height: checkSize)
                     .background(Circle().fill(isDone ? color : Color.clear))
                     .overlay(Circle().strokeBorder(isDone ? color : Color.secondary.opacity(0.4), lineWidth: 1.5))
