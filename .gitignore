@@ -1,0 +1,9 @@
+build/
+.gradle/
+local.properties
+*.xcodeproj
+xcuserdata/
+.idea/
+.superpowers/
+.kotlin/
+.DS_Store
