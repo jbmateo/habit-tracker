@@ -12,6 +12,13 @@ import app.habittracker.domain.usecase.CreateCategory
 import app.habittracker.domain.usecase.CreateHabit
 import app.habittracker.domain.usecase.DeleteCategory
 import app.habittracker.domain.usecase.DeleteHabit
+import app.habittracker.domain.usecase.GetHabit
+import app.habittracker.domain.usecase.ObserveCategories
+import app.habittracker.domain.usecase.ObserveDayDetail
+import app.habittracker.domain.usecase.ObserveHabitDetail
+import app.habittracker.domain.usecase.ObserveHabits
+import app.habittracker.domain.usecase.ObserveMonthCalendar
+import app.habittracker.domain.usecase.ObserveTodayDashboard
 import app.habittracker.domain.usecase.SeedDefaultCategoriesIfEmpty
 import app.habittracker.domain.usecase.ToggleCompletion
 import app.habittracker.domain.usecase.UnarchiveHabit
@@ -57,5 +64,12 @@ class KoinGraphTest {
         assertNotNull(koin.get<UpdateCategory>())
         assertNotNull(koin.get<DeleteCategory>())
         assertNotNull(koin.get<SeedDefaultCategoriesIfEmpty>())
+        assertNotNull(koin.get<GetHabit>())
+        assertNotNull(koin.get<ObserveCategories>())
+        assertNotNull(koin.get<ObserveDayDetail>())
+        assertNotNull(koin.get<ObserveHabitDetail>())
+        assertNotNull(koin.get<ObserveHabits>())
+        assertNotNull(koin.get<ObserveMonthCalendar>())
+        assertNotNull(koin.get<ObserveTodayDashboard>())
     }
 }

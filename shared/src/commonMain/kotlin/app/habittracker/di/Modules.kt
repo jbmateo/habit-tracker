@@ -15,6 +15,13 @@ import app.habittracker.domain.usecase.CreateCategory
 import app.habittracker.domain.usecase.CreateHabit
 import app.habittracker.domain.usecase.DeleteCategory
 import app.habittracker.domain.usecase.DeleteHabit
+import app.habittracker.domain.usecase.GetHabit
+import app.habittracker.domain.usecase.ObserveCategories
+import app.habittracker.domain.usecase.ObserveDayDetail
+import app.habittracker.domain.usecase.ObserveHabitDetail
+import app.habittracker.domain.usecase.ObserveHabits
+import app.habittracker.domain.usecase.ObserveMonthCalendar
+import app.habittracker.domain.usecase.ObserveTodayDashboard
 import app.habittracker.domain.usecase.SeedDefaultCategoriesIfEmpty
 import app.habittracker.domain.usecase.ToggleCompletion
 import app.habittracker.domain.usecase.UnarchiveHabit
@@ -50,4 +57,12 @@ val sharedModule: Module = module {
     factory { UpdateCategory(get()) }
     factory { DeleteCategory(get()) }
     factory { SeedDefaultCategoriesIfEmpty(get()) }
+
+    factory { GetHabit(get()) }
+    factory { ObserveCategories(get()) }
+    factory { ObserveDayDetail(get(), get(), get()) }
+    factory { ObserveHabitDetail(get(), get(), get()) }
+    factory { ObserveHabits(get()) }
+    factory { ObserveMonthCalendar(get(), get(), get()) }
+    factory { ObserveTodayDashboard(get(), get(), get()) }
 }
