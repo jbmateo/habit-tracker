@@ -27,8 +27,10 @@ import app.habittracker.domain.usecase.ToggleCompletion
 import app.habittracker.domain.usecase.UnarchiveHabit
 import app.habittracker.domain.usecase.UpdateCategory
 import app.habittracker.domain.usecase.UpdateHabit
+import app.habittracker.presentation.dashboard.DashboardViewModel
 import kotlinx.datetime.TimeZone
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import kotlin.time.Clock
@@ -65,4 +67,6 @@ val sharedModule: Module = module {
     factory { ObserveHabits(get()) }
     factory { ObserveMonthCalendar(get(), get(), get()) }
     factory { ObserveTodayDashboard(get(), get(), get()) }
+
+    viewModelOf(::DashboardViewModel)
 }

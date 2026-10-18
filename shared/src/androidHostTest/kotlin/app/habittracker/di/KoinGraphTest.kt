@@ -24,6 +24,7 @@ import app.habittracker.domain.usecase.ToggleCompletion
 import app.habittracker.domain.usecase.UnarchiveHabit
 import app.habittracker.domain.usecase.UpdateCategory
 import app.habittracker.domain.usecase.UpdateHabit
+import app.habittracker.presentation.dashboard.DashboardViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -71,5 +72,6 @@ class KoinGraphTest {
         assertNotNull(koin.get<ObserveHabits>())
         assertNotNull(koin.get<ObserveMonthCalendar>())
         assertNotNull(koin.get<ObserveTodayDashboard>())
+        assertNotNull(koin.get<DashboardViewModel>())
     }
 }
