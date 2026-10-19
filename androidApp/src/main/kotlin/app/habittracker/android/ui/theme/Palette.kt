@@ -40,8 +40,15 @@ fun categoryOnColorContrast(key: String, dark: Boolean): Double {
 private fun contrastAgainstBlack(fill: Color) = (luminance(fill) + 0.05) / 0.05
 private fun contrastAgainstWhite(fill: Color) = 1.05 / (luminance(fill) + 0.05)
 
+/** WCAG contrast ratio between two colors. */
+fun contrastRatio(a: Color, b: Color): Double {
+    val la = luminance(a)
+    val lb = luminance(b)
+    return (maxOf(la, lb) + 0.05) / (minOf(la, lb) + 0.05)
+}
+
 /** WCAG relative luminance of an sRGB color. */
-private fun luminance(c: Color): Double {
+internal fun luminance(c: Color): Double {
     fun channel(v: Float): Double = v.toDouble().let { if (it <= 0.03928) it / 12.92 else Math.pow((it + 0.055) / 1.055, 2.4) }
     return 0.2126 * channel(c.red) + 0.7152 * channel(c.green) + 0.0722 * channel(c.blue)
 }
