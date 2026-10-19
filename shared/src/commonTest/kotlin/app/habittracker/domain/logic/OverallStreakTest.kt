@@ -132,4 +132,23 @@ class OverallStreakTest {
         assertEquals(2, longestPerfectRun(statuses))
         assertEquals(0, longestPerfectRun(emptyList()))
     }
+
+    @Test
+    fun runStartSkipsDaysWithNothingDue() {
+        // Mon/Wed/Fri habit, done Mon 5, Wed 7, Fri 9, Mon 12: a 4-day streak that began Monday the 5th.
+        val h = habit("h1", created = "2026-01-05", days = MON_WED_FRI)
+        val index = done(
+            "2026-01-05" to setOf("h1"), "2026-01-07" to setOf("h1"),
+            "2026-01-09" to setOf("h1"), "2026-01-12" to setOf("h1"),
+        )
+        assertEquals(date("2026-01-05"), overallRunStart(listOf(h), index, date("2026-01-11"))) // Sunday, nothing due
+        assertEquals(date("2026-01-05"), overallRunStart(listOf(h), index, date("2026-01-13"))) // Tuesday, nothing due
+        assertEquals(date("2026-01-05"), overallRunStart(listOf(h), index, date("2026-01-14"))) // Wednesday, not yet done
+    }
+
+    @Test
+    fun noRunStartWithoutStreak() {
+        val h = habit("h1", created = "2026-01-05")
+        assertEquals(null, overallRunStart(listOf(h), emptyMap(), date("2026-01-08")))
+    }
 }

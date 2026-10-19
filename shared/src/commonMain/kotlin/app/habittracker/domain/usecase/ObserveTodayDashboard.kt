@@ -3,6 +3,7 @@ package app.habittracker.domain.usecase
 import app.habittracker.domain.logic.dayStatus
 import app.habittracker.domain.logic.dueHabits
 import app.habittracker.domain.logic.habitStats
+import app.habittracker.domain.logic.overallRunStart
 import app.habittracker.domain.logic.overallStreak
 import app.habittracker.domain.model.CategoryGroup
 import app.habittracker.domain.model.DayStatus
@@ -30,6 +31,8 @@ data class TodayDashboard(
     val groups: List<CategoryGroup<TodayHabitItem>>,
     val hasAnyHabits: Boolean,
     val week: WeekComparison,
+    /** First day of the current perfect-day run (identifies the run for milestones); null with no streak. */
+    val streakRunStart: LocalDate? = null,
 )
 
 class ObserveTodayDashboard(
@@ -55,6 +58,7 @@ class ObserveTodayDashboard(
                 done = items.count { it.isDone },
                 due = items.size,
                 streak = overallStreak(allHabits, index, today),
+                streakRunStart = overallRunStart(allHabits, index, today),
                 isPerfect = dayStatus(today, today, allHabits, index) is DayStatus.Perfect,
                 groups = items.groupByCategory { it.habit.category },
                 hasAnyHabits = allHabits.any { !it.isArchived },

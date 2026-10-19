@@ -38,6 +38,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.minus
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -259,5 +260,24 @@ class DashboardViewModelTest {
             assertNull(milestone(awaitItem()))
         }
         assertEquals(MilestoneSeen(date("2025-12-05"), 30), prefs.milestoneSeen.value)
+    }
+
+    @Test fun dismissedMilestoneStaysHiddenOverWeekend() = runTest {
+        // Weekday habit with seven perfect due days ending Friday the 16th (Thu 8 … Fri 16).
+        val weekdays = setOf(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY)
+        store.habits.value = listOf(habit("a", created = "2026-01-08", days = weekdays))
+        store.completions.value = listOf("08", "09", "12", "13", "14", "15", "16").map { Completion("a", date("2026-01-$it")) }
+        clock.setToday(date("2026-01-16"))
+        val vm = vm()
+        vm.uiState.test {
+            awaitItem()
+            assertEquals(7, milestone(awaitItem()))
+            vm.onEvent(DashboardEvent.DismissMilestone)
+            assertNull(milestone(awaitItem()))
+            for (day in listOf("17", "18", "19")) { // Saturday, Sunday, Monday (not yet done)
+                clock.setToday(date("2026-01-$day"))
+                assertNull(milestone(awaitItem()), "milestone came back on Jan $day")
+            }
+        }
     }
 }

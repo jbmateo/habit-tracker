@@ -14,9 +14,7 @@ import app.habittracker.domain.usecase.SetTodaySort
 import app.habittracker.domain.usecase.ObserveTodaySort
 import app.habittracker.domain.logic.pendingMilestone
 import app.habittracker.domain.logic.sortTodayItems
-import app.habittracker.domain.logic.streakRunStart
 import app.habittracker.domain.model.MilestoneSeen
-import app.habittracker.domain.usecase.TodayDashboard
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -61,7 +59,7 @@ class DashboardViewModel(
                     dashboard,
                     sortTodayItems(dashboard.groups, sort),
                     sort,
-                    milestone = pendingMilestone(dashboard.streak.current, dashboard.runStart(), seen),
+                    milestone = pendingMilestone(dashboard.streak.current, dashboard.streakRunStart, seen),
                 )
             } else {
                 DashboardUiState.NoHabits
@@ -88,7 +86,7 @@ class DashboardViewModel(
             DashboardEvent.DismissMilestone -> {
                 val content = uiState.value as? DashboardUiState.Content ?: return
                 val milestone = content.milestone ?: return
-                val runStart = content.dashboard.runStart() ?: return
+                val runStart = content.dashboard.streakRunStart ?: return
                 viewModelScope.launch { celebrations.dismissMilestone(MilestoneSeen(runStart, milestone)) }
             }
             is DashboardEvent.SortSelected -> viewModelScope.launch {
@@ -102,6 +100,4 @@ class DashboardViewModel(
             }
         }
     }
-
-    private fun TodayDashboard.runStart() = streakRunStart(date, streak.current, todayDone = isPerfect)
 }

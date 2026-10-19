@@ -9,13 +9,6 @@ import kotlin.test.assertNull
 class MilestonesTest {
     private val run = date("2026-10-11")
 
-    @Test fun runStartWhenTodayDone() =
-        assertEquals(date("2026-10-12"), streakRunStart(date("2026-10-19"), currentStreak = 8, todayDone = true))
-
-    @Test fun runStartWhenTodayNotYetDone() =
-        assertEquals(date("2026-10-11"), streakRunStart(date("2026-10-19"), currentStreak = 8, todayDone = false))
-
-    @Test fun noRunWithoutStreak() = assertNull(streakRunStart(date("2026-10-19"), currentStreak = 0, todayDone = false))
 
     @Test fun noMilestoneBelowSeven() = assertNull(pendingMilestone(6, run, null))
 
