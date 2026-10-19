@@ -9,7 +9,6 @@ struct HeroStreakCard: View {
     let pulseTrigger: Int
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulse = false
 
     private var done: Int { Int(dashboard.done) }
     private var due: Int { Int(dashboard.due) }
@@ -52,15 +51,18 @@ struct HeroStreakCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: Theme.cornerRadius).fill(Theme.hero))
         .overlay(
+            // Fades in, holds, fades out on each trigger; at rest it's invisible.
             RoundedRectangle(cornerRadius: Theme.cornerRadius)
                 .strokeBorder(Theme.gold, lineWidth: 3)
-                .opacity(pulse ? 1 : 0)
+                .keyframeAnimator(initialValue: 0.0, trigger: pulseTrigger) { outline, opacity in
+                    outline.opacity(opacity)
+                } keyframes: { _ in
+                    LinearKeyframe(1.0, duration: 0.1)
+                    LinearKeyframe(1.0, duration: 0.15)
+                    LinearKeyframe(0.0, duration: 0.4)
+                }
         )
         .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.45, dampingFraction: 0.8), value: done)
-        .onChange(of: pulseTrigger) {
-            pulse = true
-            withAnimation(.easeOut(duration: 0.4)) { pulse = false }
-        }
     }
 
     /// Flame fill on the indigo track; gold once everything is done. Exposed to VoiceOver as "N of M habits done".
