@@ -15,6 +15,9 @@ Jetpack Compose on Android. It is a personal project for daily use and learning.
 - Archive for habits you no longer track
 - Reminders: one optional time per habit, only on scheduled days, skipped if
   the habit is already done, with a "Mark done" action on the notification
+- Bold Today screen with confetti when you finish the day and streak
+  milestones at 7, 30, 100 and 365 days (iOS). Android keeps the previous
+  look for now.
 
 All data is stored locally on the device.
 
