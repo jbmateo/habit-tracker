@@ -60,6 +60,9 @@ fun HabitRow(
         if (item.isDone && !lastDone && !animationsOff) {
             bounce.animateTo(1.25f, tween(120))
             bounce.animateTo(1f, spring(dampingRatio = 0.5f))
+        } else if (bounce.value != 1f) {
+            // A quick un-check cancels a bounce mid-way; settle back to rest instead of staying enlarged.
+            bounce.snapTo(1f)
         }
         lastDone = item.isDone
     }

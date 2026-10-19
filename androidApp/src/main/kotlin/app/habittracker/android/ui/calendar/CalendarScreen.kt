@@ -1,5 +1,6 @@
 package app.habittracker.android.ui.calendar
 
+import androidx.compose.runtime.key
 import app.habittracker.android.ui.theme.HabitTheme
 import app.habittracker.android.ui.theme.CardShape
 import androidx.compose.foundation.BorderStroke
@@ -220,7 +221,7 @@ private fun MonthSummary(calendar: MonthCalendar, modifier: Modifier = Modifier)
 private val dayFormatter = DateTimeFormatter.ofPattern("EEEE, d MMMM")
 
 @Composable
-private fun DayPanel(detail: DayDetail, onEvent: (CalendarEvent) -> Unit, modifier: Modifier = Modifier) {
+internal fun DayPanel(detail: DayDetail, onEvent: (CalendarEvent) -> Unit, modifier: Modifier = Modifier) {
     val date = remember(detail.date) {
         java.time.LocalDate.of(detail.date.year, detail.date.month.ordinal + 1, detail.date.day).format(dayFormatter)
     }
@@ -238,7 +239,9 @@ private fun DayPanel(detail: DayDetail, onEvent: (CalendarEvent) -> Unit, modifi
             detail.groups.forEach { group ->
                 CategoryHeader(group.category)
                 group.items.forEach { item ->
-                    HabitRow(
+                    // Keyed by day as well, so browsing to another day shows its rows at rest instead of animating
+                    // the previous day's rows into the new state.
+                    key(detail.date, item.habit.id) { HabitRow(
                         item = TodayHabitItem(item.habit, item.isDone, streak = 0),
                         onToggle = { onEvent(CalendarEvent.ToggleHabit(item.habit.id, detail.date)) },
                         toggleEnabled = detail.isEditable,
@@ -247,7 +250,7 @@ private fun DayPanel(detail: DayDetail, onEvent: (CalendarEvent) -> Unit, modifi
                             pendingDay -> null
                             else -> "Missed"
                         },
-                    )
+                    ) }
                 }
             }
             if (!detail.isEditable && detail.groups.isNotEmpty()) {
