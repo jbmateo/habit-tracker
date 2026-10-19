@@ -52,6 +52,7 @@ struct RootTabView: View {
             .tabItem { Label("Habits", systemImage: "list.bullet") }
             .tag(Tab.habits)
         }
+        .tint(Theme.accent)
         .sheet(item: $formSheet) { sheet in
             NavigationStack {
                 HabitFormView(habitId: sheet.habitId)

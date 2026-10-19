@@ -19,9 +19,12 @@ private struct DashboardContent: View {
 
     @State private var celebrations = 0
     @State private var errorMessage: String?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         content
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.canvas.ignoresSafeArea())
             .navigationTitle("Today")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -36,10 +39,11 @@ private struct DashboardContent: View {
                     }
                 }
             }
-            // Success haptic only when the done count goes up, i.e. a toggle really succeeded.
-            .sensoryFeedback(trigger: doneCount) { old, new in
-                guard let old, let new, new > old else { return nil }
-                return .success
+            // Haptics only when the done count goes up, i.e. a toggle really succeeded: a light tap per habit,
+            // success when it completes the day.
+            .sensoryFeedback(trigger: progress) { old, new in
+                guard let old, let new, new.done > old.done else { return nil }
+                return new.done == new.due ? .success : .impact(weight: .light)
             }
             .errorAlert($errorMessage)
             .task { host.start() }
@@ -80,9 +84,15 @@ private struct DashboardContent: View {
         }
     }
 
-    /// Habits done today; `nil` until the dashboard has loaded, so the first load never counts as a toggle.
-    private var doneCount: Int? {
-        if case .content(let content) = onEnum(of: host.state) { Int(content.dashboard.done) } else { nil }
+    private struct Progress: Equatable { let done: Int; let due: Int }
+
+    /// Today's progress; `nil` until the dashboard has loaded, so the first load never counts as a toggle.
+    private var progress: Progress? {
+        if case .content(let content) = onEnum(of: host.state) {
+            Progress(done: Int(content.dashboard.done), due: Int(content.dashboard.due))
+        } else {
+            nil
+        }
     }
 
     @ViewBuilder
@@ -97,30 +107,43 @@ private struct DashboardContent: View {
                 cta: "Create your first habit"
             )
         case .content(let content):
-            dashboard(content.dashboard, items: kotlinList(content.items, as: TodayHabitItem.self))
+            let items = kotlinList(content.items, as: TodayHabitItem.self)
+            dashboard(content.dashboard, items: items, milestone: content.milestone?.intValue)
+                .overlay(alignment: .top) {
+                    if !reduceMotion {
+                        ConfettiView(
+                            trigger: celebrations,
+                            colors: [Theme.flame, Theme.gold, Theme.accent] + items.map { Palette.color($0.habit.category.colorKey) }
+                        )
+                    }
+                }
         }
     }
 
-    private func dashboard(_ dashboard: TodayDashboard, items: [TodayHabitItem]) -> some View {
+    private func dashboard(_ dashboard: TodayDashboard, items: [TodayHabitItem], milestone: Int?) -> some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text(formatted(dashboard.date)).font(.title2.bold())
-                    HStack(spacing: 16) {
-                        ProgressRing(done: Int(dashboard.done), due: Int(dashboard.due), celebrateTrigger: celebrations)
-                        StreakCard(streak: dashboard.streak)
+                HeroStreakCard(
+                    dashboard: dashboard,
+                    dateText: formatted(dashboard.date),
+                    pulseTrigger: reduceMotion ? celebrations : 0
+                )
+                if let milestone {
+                    MilestoneCard(milestone: milestone) {
+                        withAnimation(.easeOut(duration: 0.25)) {
+                            host.vm.onEvent(event: DashboardEventDismissMilestone.shared)
+                        }
                     }
-                    WeekComparisonLine(week: dashboard.week)
-                    if dashboard.isPerfect {
-                        Text("Perfect day!").font(.headline)
-                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                .padding(.vertical, 4)
             }
+            .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
 
             if dashboard.groups.isEmpty {
                 emptyState(title: "Nothing due today", message: "Enjoy the day off.", cta: nil)
+                    .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
             }
             if !items.isEmpty {
@@ -133,11 +156,15 @@ private struct DashboardContent: View {
                             onToggle: { host.vm.onEvent(event: DashboardEventToggleHabit(id: item.habit.id)) },
                             onOpen: { host.vm.onEvent(event: DashboardEventHabitClicked(id: item.habit.id)) }
                         )
+                        .listRowBackground(Theme.card)
                     }
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Theme.canvas)
+        .animation(.easeOut(duration: 0.25), value: milestone)
     }
 
     private func emptyState(title: String, message: String, cta: String?) -> some View {

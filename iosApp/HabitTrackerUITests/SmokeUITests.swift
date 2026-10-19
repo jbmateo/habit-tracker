@@ -46,6 +46,18 @@ final class SmokeUITests: XCTestCase {
     }
 
     @MainActor
+    func testCompletingOnlyHabitShowsAllDone() {
+        let app = launchFresh()
+        createHabit(named: "Read", in: app, via: "Create your first habit")
+
+        let check = app.buttons["Mark done: Read"]
+        XCTAssertTrue(check.waitForExistence(timeout: 10))
+        check.tap()
+
+        XCTAssertTrue(app.staticTexts["All done today ✨"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testArchiveThenDeleteFromDetail() {
         let app = launchFresh()
         createHabit(named: "Stretch", in: app, via: "Create your first habit")

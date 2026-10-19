@@ -12,6 +12,8 @@ enum ThemeHex {
     static let heroTrack: Pair = (0x534AB7, 0x3C3489)
     static let flame: Pair = (0xEF9F27, 0xEF9F27)
     static let gold: Pair = (0xFFB224, 0xFFCA16)
+    /// Tint for controls on the canvas: hero indigo, lifted in dark mode so it stays legible on dark bars.
+    static let accent: Pair = (0x3C3489, 0xAFA9EC)
 }
 
 /// The app's visual identity: a cool canvas, white cards and a deep indigo hero, in light and dark.
@@ -24,6 +26,7 @@ enum Theme {
     static let heroTrack = dynamic(ThemeHex.heroTrack)
     static let flame = dynamic(ThemeHex.flame)
     static let gold = dynamic(ThemeHex.gold)
+    static let accent = dynamic(ThemeHex.accent)
 
     static let cornerRadius: CGFloat = 20
 
