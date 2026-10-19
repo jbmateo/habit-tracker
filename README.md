@@ -33,6 +33,24 @@ All data is stored locally on the device.
 - Reminders are planned 7 days ahead (at most 60 at a time) and refreshed
   whenever habits or completions change.
 
+## Screenshots
+
+The sample data shows an 8-day streak, so Today displays the 7-day milestone card.
+
+**iPhone (SwiftUI)**
+
+<table>
+<tr><th>Today</th><th>Calendar</th><th>Habits</th><th>Habit detail</th><th>Dark mode</th></tr>
+<tr><td><img src="docs/screenshots/ios/today.png" width="180" alt="ios Today"></td><td><img src="docs/screenshots/ios/calendar.png" width="180" alt="ios Calendar"></td><td><img src="docs/screenshots/ios/habits.png" width="180" alt="ios Habits"></td><td><img src="docs/screenshots/ios/detail.png" width="180" alt="ios Habit detail"></td><td><img src="docs/screenshots/ios/today-dark.png" width="180" alt="ios Today in dark mode"></td></tr>
+</table>
+
+**Android (Jetpack Compose)**
+
+<table>
+<tr><th>Today</th><th>Calendar</th><th>Habits</th><th>Habit detail</th><th>Dark mode</th></tr>
+<tr><td><img src="docs/screenshots/android/today.png" width="180" alt="android Today"></td><td><img src="docs/screenshots/android/calendar.png" width="180" alt="android Calendar"></td><td><img src="docs/screenshots/android/habits.png" width="180" alt="android Habits"></td><td><img src="docs/screenshots/android/detail.png" width="180" alt="android Habit detail"></td><td><img src="docs/screenshots/android/today-dark.png" width="180" alt="android Today in dark mode"></td></tr>
+</table>
+
 ## Architecture
 
 ```
