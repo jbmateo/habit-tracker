@@ -12,21 +12,23 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.habittracker.android.ui.theme.HabitTheme
 import app.habittracker.domain.model.WeekComparison
 import kotlin.math.roundToInt
 
 /** "This week 86% · Last week 71%  ↑ 15 pts"; hidden when this week has no data yet. */
 @Composable
-fun WeekComparisonLine(week: WeekComparison, modifier: Modifier = Modifier) {
+fun WeekComparisonLine(week: WeekComparison, modifier: Modifier = Modifier, onHero: Boolean = false) {
+    val hero = HabitTheme.colors
     val thisWeek = week.thisWeek?.let { (it * 100).roundToInt() } ?: return
     val lastWeek = week.lastWeek?.let { (it * 100).roundToInt() }
     val summary = "This week $thisWeek%" + (lastWeek?.let { " · Last week $it%" } ?: "")
     val delta = lastWeek?.let { thisWeek - it }
     val (trend, trendColor) = when {
         delta == null -> null to Color.Unspecified
-        delta > 0 -> "↑ $delta pts" to Color(0xFF2E9E5B)
-        delta < 0 -> "↓ ${-delta} pts" to MaterialTheme.colorScheme.error
-        else -> "→ same" to MaterialTheme.colorScheme.onSurfaceVariant
+        delta > 0 -> "↑ $delta pts" to (if (onHero) hero.gold else Color(0xFF2E9E5B))
+        delta < 0 -> "↓ ${-delta} pts" to (if (onHero) hero.heroText else MaterialTheme.colorScheme.error)
+        else -> "→ same" to (if (onHero) hero.heroSubtext else MaterialTheme.colorScheme.onSurfaceVariant)
     }
     Row(
         modifier.clearAndSetSemantics {
@@ -35,7 +37,7 @@ fun WeekComparisonLine(week: WeekComparison, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(summary, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(summary, style = MaterialTheme.typography.bodyMedium, color = if (onHero) hero.heroSubtext else MaterialTheme.colorScheme.onSurfaceVariant)
         if (trend != null) Text(trend, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = trendColor)
     }
 }

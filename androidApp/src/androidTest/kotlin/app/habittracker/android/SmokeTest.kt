@@ -3,6 +3,7 @@ package app.habittracker.android
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -33,9 +34,21 @@ class SmokeTest {
         rule.waitUntil(5_000) {
             rule.onAllNodesWithContentDescriptionCount("1 of 1 habits done") == 1
         }
-        rule.onNodeWithText("1/1").assertIsDisplayed()
         // "Today" is pinned by TestHabitApp, so the header never depends on when the test runs.
         rule.onNodeWithText("Wednesday, 14 October").assertIsDisplayed()
+    }
+
+    @Test
+    fun completingOnlyHabitShowsAllDone() {
+        rule.onNodeWithText("Create your first habit").performClick()
+        rule.onNodeWithText("Name").performTextInput("Read")
+        rule.onNodeWithText("Save").performClick()
+        rule.waitUntil(5_000) { rule.onAllNodesWithContentDescriptionCount("Mark done: Read") == 1 }
+
+        rule.onNodeWithContentDescription("Mark done: Read").performClick()
+
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("All done today ✨").fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("All done today ✨").assertIsDisplayed()
     }
 
     @Test

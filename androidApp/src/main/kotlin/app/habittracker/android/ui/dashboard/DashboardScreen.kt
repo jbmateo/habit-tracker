@@ -1,5 +1,15 @@
 package app.habittracker.android.ui.dashboard
 
+import app.habittracker.android.ui.theme.rememberAnimationsDisabled
+import app.habittracker.android.ui.theme.categoryColor
+import app.habittracker.android.ui.theme.HabitTheme
+import app.habittracker.android.ui.theme.DisplayFont
+import app.habittracker.android.ui.theme.CardShape
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.automirrored.rounded.Sort
@@ -43,9 +53,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.habittracker.android.ui.common.HabitRow
-import app.habittracker.android.ui.common.ProgressRing
-import app.habittracker.android.ui.common.StreakCard
-import app.habittracker.android.ui.common.WeekComparisonLine
 import app.habittracker.android.ui.common.domainErrorMessage
 import app.habittracker.android.ui.common.showReplacing
 import app.habittracker.domain.model.TodaySort
@@ -85,7 +92,7 @@ fun DashboardScreen(
         }
     }
 
-    Column(modifier.fillMaxSize().padding(contentPadding)) {
+    Column(modifier.fillMaxSize().background(HabitTheme.colors.canvas).padding(contentPadding)) {
         when (val s = state) {
             DashboardUiState.Loading -> Unit
             DashboardUiState.NoHabits -> EmptyState(
@@ -102,15 +109,32 @@ fun DashboardScreen(
 @Composable
 private fun DashboardContent(state: DashboardUiState.Content, celebrations: Int, onEvent: (DashboardEvent) -> Unit) {
     val dashboard = state.dashboard
+    val colors = HabitTheme.colors
     val haptic = LocalHapticFeedback.current
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-        item {
-            Column(Modifier.padding(16.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    val animationsOff = rememberAnimationsDisabled()
+    val dark = isSystemInDarkTheme()
+
+    // Haptics only once a toggle has really landed: a tick per habit, a confirm when the day completes.
+    var lastDone by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(dashboard.date, dashboard.done) {
+        val previous = lastDone
+        lastDone = dashboard.done
+        if (previous != null && dashboard.done > previous) {
+            haptic.performHapticFeedback(
+                if (dashboard.done == dashboard.due) HapticFeedbackType.Confirm else HapticFeedbackType.ContextClick,
+            )
+        }
+    }
+
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+            item {
+                Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        formatDate(dashboard.date),
+                        "Today",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        fontFamily = DisplayFont,
+                        fontWeight = FontWeight.Black,
                         modifier = Modifier.weight(1f),
                     )
                     SortMenu(state.sort, onSelect = { onEvent(DashboardEvent.SortSelected(it)) })
@@ -118,57 +142,68 @@ private fun DashboardContent(state: DashboardUiState.Content, celebrations: Int,
                         Icon(Icons.Rounded.Add, contentDescription = "Add habit")
                     }
                 }
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    ProgressRing(dashboard.done, dashboard.due, celebrations)
-                    StreakCard(dashboard.streak, Modifier.weight(1f))
-                }
-                WeekComparisonLine(dashboard.week, Modifier.padding(top = 12.dp))
-                if (dashboard.isPerfect) {
-                    Text("Perfect day!", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-                }
             }
-        }
-        if (dashboard.groups.isEmpty()) {
             item {
-                EmptyState(
-                    title = "Nothing due today",
-                    body = "Enjoy the day off.",
-                    cta = null,
-                    onCta = {},
-                    modifier = Modifier.padding(top = 32.dp),
+                HeroStreakCard(
+                    dashboard = dashboard,
+                    dateText = formatDate(dashboard.date),
+                    pulseTrigger = if (animationsOff) celebrations else 0,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
-        }
-        if (state.items.isNotEmpty()) {
             item {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    modifier = Modifier.padding(horizontal = 16.dp).fillMaxWidth(),
-                ) {
-                    Column {
-                        state.items.forEachIndexed { index, item ->
-                            key(item.habit.id) {
-                                HabitRow(
-                                    item = item,
-                                    onToggle = {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        onEvent(DashboardEvent.ToggleHabit(item.habit.id))
-                                    },
-                                    onOpen = { onEvent(DashboardEvent.HabitClicked(item.habit.id)) },
-                                )
-                            }
-                            if (index < state.items.lastIndex) {
-                                HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                AnimatedVisibility(visible = state.milestone != null, enter = fadeIn(), exit = fadeOut()) {
+                    val milestone = state.milestone ?: return@AnimatedVisibility
+                    MilestoneCard(
+                        milestone = milestone,
+                        onDismiss = { onEvent(DashboardEvent.DismissMilestone) },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
+            }
+            if (dashboard.groups.isEmpty()) {
+                item {
+                    EmptyState(
+                        title = "Nothing due today",
+                        body = "Enjoy the day off.",
+                        cta = null,
+                        onCta = {},
+                        modifier = Modifier.padding(top = 32.dp),
+                    )
+                }
+            }
+            if (state.items.isNotEmpty()) {
+                item {
+                    Surface(
+                        shape = CardShape,
+                        color = colors.card,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
+                    ) {
+                        Column(Modifier.padding(vertical = 4.dp)) {
+                            state.items.forEachIndexed { index, item ->
+                                key(item.habit.id) {
+                                    HabitRow(
+                                        item = item,
+                                        onToggle = { onEvent(DashboardEvent.ToggleHabit(item.habit.id)) },
+                                        onOpen = { onEvent(DashboardEvent.HabitClicked(item.habit.id)) },
+                                    )
+                                }
+                                if (index < state.items.lastIndex) {
+                                    HorizontalDivider(Modifier.padding(start = 62.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+        if (!animationsOff) {
+            Confetti(
+                trigger = celebrations,
+                colors = listOf(colors.flame, colors.gold, colors.accent) +
+                    state.items.map { categoryColor(it.habit.category.colorKey, dark) },
+                modifier = Modifier.fillMaxSize(),
+            )
         }
     }
 }

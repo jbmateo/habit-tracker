@@ -70,7 +70,10 @@ object HabitTheme {
 private fun lightScheme(c: HabitColors) = lightColorScheme(
     primary = c.accent,
     onPrimary = Color.White,
-    secondary = Color(0xFF30A46C),
+    // Material draws the selected tab label and indicator from the secondary roles.
+    secondary = c.accent,
+    secondaryContainer = Color(0xFFE3E1FA),
+    onSecondaryContainer = c.accent,
     background = c.canvas,
     surface = c.card,
     surfaceContainer = c.card,
@@ -80,7 +83,9 @@ private fun lightScheme(c: HabitColors) = lightColorScheme(
 private fun darkScheme(c: HabitColors) = darkColorScheme(
     primary = c.accent,
     onPrimary = Color(0xFF13121C),
-    secondary = Color(0xFF3DD68C),
+    secondary = c.accent,
+    secondaryContainer = Color(0xFF2F2B55),
+    onSecondaryContainer = c.accent,
     background = c.canvas,
     surface = c.card,
     surfaceContainer = c.card,
