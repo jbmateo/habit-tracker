@@ -45,8 +45,11 @@ private struct CategoryListContent: View {
             .accessibilityAction(named: "Delete") {
                 host.vm.onEvent(event: CategoryListEventDeleteClicked(id: category.id))
             }
+            .listRowBackground(Theme.card)
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Theme.canvas)
         .navigationTitle("Categories")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

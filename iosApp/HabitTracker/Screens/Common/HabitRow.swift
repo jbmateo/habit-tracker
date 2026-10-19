@@ -13,7 +13,6 @@ struct HabitRow: View {
     let onToggle: () -> Void
     var onOpen: (() -> Void)?
 
-    @ScaledMetric(relativeTo: .title3) private var iconSize = 34
     @ScaledMetric(relativeTo: .body) private var checkSize = 36
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Bumped on each check-off to play the spring; un-checking never bounces.
@@ -71,11 +70,7 @@ struct HabitRow: View {
 
     private var label: some View {
         HStack(spacing: 12) {
-            Image(systemName: HabitIcons.symbol(habit.iconKey))
-                .font(.body.weight(.semibold))
-                .foregroundStyle(Palette.onColor(habit.category.colorKey))
-                .frame(width: iconSize, height: iconSize)
-                .background(Circle().fill(color))
+            CategoryIcon(iconKey: habit.iconKey, colorKey: habit.category.colorKey)
             VStack(alignment: .leading, spacing: 2) {
                 Text(habit.name)
                     .font(.body)

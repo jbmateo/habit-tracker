@@ -6,7 +6,7 @@ struct CategoryHeader: View {
 
     var body: some View {
         Text(category.name)
-            .font(.subheadline.weight(.semibold))
+            .font(.system(.subheadline, design: .rounded).weight(.bold))
             .foregroundStyle(Palette.color(category.colorKey))
             .textCase(nil)
     }

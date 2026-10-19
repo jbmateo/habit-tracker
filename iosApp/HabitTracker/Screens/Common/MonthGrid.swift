@@ -99,12 +99,17 @@ struct StatTile: View {
     var body: some View {
         let color = Palette.color(colorKey)
         VStack(alignment: .leading, spacing: 2) {
-            Text(value).font(.title3.bold()).foregroundStyle(color).minimumScaleFactor(0.7).lineLimit(1)
+            Text(value)
+                .font(.system(.title2, design: .rounded).weight(.bold))
+                .foregroundStyle(color)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
             Text(label).font(.footnote).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(color.opacity(colorScheme == .dark ? 0.22 : 0.12), in: RoundedRectangle(cornerRadius: 12))
+        .background(color.opacity(colorScheme == .dark ? 0.22 : 0.12), in: RoundedRectangle(cornerRadius: 16))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16))
         .accessibilityElement(children: .combine)
     }
 }

@@ -75,6 +75,7 @@ private struct HabitDetailContent: View {
             Color.clear
         case .content(let content):
             ScrollView { DetailBody(state: content, onEvent: { host.vm.onEvent(event: $0) }).padding(16) }
+                .background(Theme.canvas.ignoresSafeArea())
         }
     }
 }
@@ -113,12 +114,9 @@ private struct DetailBody: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 12) {
-                Image(systemName: HabitIcons.symbol(habit.iconKey))
-                    .font(.system(size: iconSize * 0.7))
-                    .foregroundStyle(color)
-                    .frame(width: iconSize)
+                CategoryIcon(iconKey: habit.iconKey, colorKey: habit.category.colorKey, size: iconSize)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(habit.name).font(.title2.bold()).foregroundStyle(color)
+                    Text(habit.name).font(.system(.title2, design: .rounded).weight(.bold))
                     Text(scheduleSummary(habit.currentSchedule.days) + reminderSuffix(habit.reminderTime) + (habit.isArchived ? " · Archived" : ""))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -133,23 +131,27 @@ private struct DetailBody: View {
                     colorKey: completionColorKey(state.detail.stats.completionRate)
                 )
             }
-            MonthHeader(
-                month: state.detail.month,
-                canGoNext: state.canGoNext,
-                onPrev: { onEvent(HabitDetailEventPrevMonth.shared) },
-                onNext: { onEvent(HabitDetailEventNextMonth.shared) }
-            )
-            MonthGrid(
-                month: state.detail.month,
-                leadingBlanks: Int(state.leadingBlanks),
-                items: dayCells
-            ) { cell in
-                HabitDayCell(day: cell.day, state: cell.state, band: band(forDay: cell.day), colorKey: habit.category.colorKey, color: color)
+            VStack(spacing: 8) {
+                MonthHeader(
+                    month: state.detail.month,
+                    canGoNext: state.canGoNext,
+                    onPrev: { onEvent(HabitDetailEventPrevMonth.shared) },
+                    onNext: { onEvent(HabitDetailEventNextMonth.shared) }
+                )
+                MonthGrid(
+                    month: state.detail.month,
+                    leadingBlanks: Int(state.leadingBlanks),
+                    items: dayCells
+                ) { cell in
+                    HabitDayCell(day: cell.day, state: cell.state, band: band(forDay: cell.day), colorKey: habit.category.colorKey, color: color)
+                }
             }
+            .themeCard(padding: 8)
             HStack(spacing: 8) {
                 Button("Edit") { onEvent(HabitDetailEventEditClicked.shared) }
                 Button(habit.isArchived ? "Unarchive" : "Archive") { onEvent(HabitDetailEventArchiveToggled.shared) }
                 Button("Delete", role: .destructive) { onEvent(HabitDetailEventDeleteClicked.shared) }
+                    .tint(.red)
             }
             .buttonStyle(.bordered)
             .padding(.bottom, 24)

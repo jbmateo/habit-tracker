@@ -19,26 +19,31 @@ private struct CalendarContent: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                MonthHeader(
-                    month: state.month,
-                    canGoNext: state.canGoNext,
-                    onPrev: { host.vm.onEvent(event: CalendarEventPrevMonth.shared) },
-                    onNext: { host.vm.onEvent(event: CalendarEventNextMonth.shared) }
-                )
-                if let calendar = state.calendar {
-                    MonthGrid(
+                VStack(spacing: 8) {
+                    MonthHeader(
                         month: state.month,
-                        leadingBlanks: Int(state.leadingBlanks),
-                        items: kotlinList(calendar.days, as: CalendarDay.self)
-                    ) { day in
-                        DayCell(day: day, band: band(for: day), selected: state.selected?.date == day.date) {
-                            host.vm.onEvent(
-                                event: state.selected?.date == day.date
-                                    ? CalendarEventClearSelection.shared
-                                    : CalendarEventSelectDay(date: day.date)
-                            )
+                        canGoNext: state.canGoNext,
+                        onPrev: { host.vm.onEvent(event: CalendarEventPrevMonth.shared) },
+                        onNext: { host.vm.onEvent(event: CalendarEventNextMonth.shared) }
+                    )
+                    if let calendar = state.calendar {
+                        MonthGrid(
+                            month: state.month,
+                            leadingBlanks: Int(state.leadingBlanks),
+                            items: kotlinList(calendar.days, as: CalendarDay.self)
+                        ) { day in
+                            DayCell(day: day, band: band(for: day), selected: state.selected?.date == day.date) {
+                                host.vm.onEvent(
+                                    event: state.selected?.date == day.date
+                                        ? CalendarEventClearSelection.shared
+                                        : CalendarEventSelectDay(date: day.date)
+                                )
+                            }
                         }
                     }
+                }
+                .themeCard(padding: 8)
+                if let calendar = state.calendar {
                     MonthSummary(calendar: calendar)
                 }
                 if let detail = state.selected {
@@ -50,6 +55,7 @@ private struct CalendarContent: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
+        .background(Theme.canvas.ignoresSafeArea())
         .navigationTitle("Calendar")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(trigger: selectedDone) { old, new in
@@ -228,6 +234,6 @@ private struct DayPanel: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(.fill.quaternary, in: RoundedRectangle(cornerRadius: 16))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.cornerRadius))
     }
 }

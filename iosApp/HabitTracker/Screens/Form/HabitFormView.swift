@@ -105,6 +105,8 @@ private struct HabitFormContent: View {
             }
             Section("Icon") { IconGrid(state: state, onEvent: send).disabled(!inputsEnabled) }
         }
+        .scrollContentBackground(.hidden)
+        .background(Theme.canvas)
         .navigationTitle(state.isEdit ? "Edit habit" : "New habit")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

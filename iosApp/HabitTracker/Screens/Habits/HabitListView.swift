@@ -65,7 +65,7 @@ private struct HabitListContent: View {
             ForEach(overview.active, id: \.category.id) { group in
                 Section {
                     ForEach(kotlinList(group.items, as: Habit_.self), id: \.id) { habit in
-                        habitRow(habit)
+                        habitRow(habit).listRowBackground(Theme.card)
                     }
                 } header: {
                     CategoryHeader(category: group.category)
@@ -75,6 +75,7 @@ private struct HabitListContent: View {
                 Button("Manage categories") {
                     host.vm.onEvent(event: HabitListEventManageCategoriesClicked.shared)
                 }
+                .listRowBackground(Theme.card)
             }
             if !archived.isEmpty {
                 Section {
@@ -83,10 +84,13 @@ private struct HabitListContent: View {
                             habitRow(habit)
                         }
                     }
+                    .listRowBackground(Theme.card)
                 }
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(Theme.canvas)
     }
 
     private func habitRow(_ habit: Habit_) -> some View {
@@ -94,7 +98,7 @@ private struct HabitListContent: View {
             host.vm.onEvent(event: HabitListEventHabitClicked(id: habit.id))
         } label: {
             HStack(spacing: 12) {
-                RowIcon(iconKey: habit.iconKey, colorKey: habit.category.colorKey)
+                CategoryIcon(iconKey: habit.iconKey, colorKey: habit.category.colorKey)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(habit.name).font(.body)
                     Text(scheduleSummary(habit.currentSchedule.days) + reminderSuffix(habit.reminderTime)).font(.footnote).foregroundStyle(.secondary)
@@ -109,19 +113,5 @@ private struct HabitListContent: View {
         .accessibilityLabel(habit.name)
         .accessibilityValue(scheduleSummary(habit.currentSchedule.days) + reminderSuffix(habit.reminderTime))
         .accessibilityAddTraits(.isButton)
-    }
-}
-
-private struct RowIcon: View {
-    let iconKey: String
-    let colorKey: String
-
-    @ScaledMetric(relativeTo: .title3) private var width = 28
-
-    var body: some View {
-        Image(systemName: HabitIcons.symbol(iconKey))
-            .font(.title3)
-            .foregroundStyle(Palette.color(colorKey))
-            .frame(width: width)
     }
 }
