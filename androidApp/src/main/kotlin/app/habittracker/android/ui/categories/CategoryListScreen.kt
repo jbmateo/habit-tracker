@@ -1,5 +1,8 @@
 package app.habittracker.android.ui.categories
 
+import app.habittracker.android.ui.theme.HabitTheme
+import app.habittracker.android.ui.theme.CardShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -73,7 +76,7 @@ fun CategoryListScreen(
         }
     }
 
-    Column(modifier.fillMaxSize().padding(contentPadding)) {
+    Column(modifier.fillMaxSize().background(HabitTheme.colors.canvas).padding(contentPadding)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back") }
             Text(
@@ -103,7 +106,13 @@ fun CategoryListScreen(
 @Composable
 private fun CategoryRow(category: Category, onEdit: () -> Unit, onDelete: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onEdit).padding(start = 16.dp, end = 4.dp),
+        Modifier
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(HabitTheme.colors.card)
+            .clickable(onClick = onEdit)
+            .padding(start = 16.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

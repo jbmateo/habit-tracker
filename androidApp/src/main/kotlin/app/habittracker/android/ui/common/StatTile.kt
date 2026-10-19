@@ -1,5 +1,9 @@
 package app.habittracker.android.ui.common
 
+import app.habittracker.android.ui.theme.HabitTheme
+import app.habittracker.android.ui.theme.DisplayFont
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -20,9 +24,10 @@ import app.habittracker.domain.model.CompletionLevel
 fun StatTile(value: String, label: String, colorKey: String, modifier: Modifier = Modifier) {
     val dark = isSystemInDarkTheme()
     val color = categoryColor(colorKey, dark)
-    Surface(modifier, shape = RoundedCornerShape(12.dp), color = color.copy(alpha = if (dark) 0.22f else 0.12f)) {
-        Column(Modifier.padding(12.dp)) {
-            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = color)
+    // The meaning color washes over a card base, so tiles read the same on the canvas in both modes.
+    Surface(modifier, shape = RoundedCornerShape(16.dp), color = HabitTheme.colors.card) {
+        Column(Modifier.background(color.copy(alpha = if (dark) 0.22f else 0.12f)).padding(12.dp)) {
+            Text(value, fontFamily = DisplayFont, fontWeight = FontWeight.Black, fontSize = 22.sp, color = color, maxLines = 1)
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

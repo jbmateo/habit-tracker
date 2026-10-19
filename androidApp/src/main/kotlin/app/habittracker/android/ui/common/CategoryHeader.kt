@@ -16,7 +16,7 @@ fun CategoryHeader(category: Category, modifier: Modifier = Modifier) {
     Text(
         text = category.name,
         style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
+        fontWeight = FontWeight.Bold,
         color = categoryColor(category.colorKey, isSystemInDarkTheme()),
         modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
     )

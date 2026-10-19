@@ -1,5 +1,9 @@
 package app.habittracker.android.ui.detail
 
+import app.habittracker.android.ui.theme.HabitTheme
+import app.habittracker.android.ui.theme.DisplayFont
+import app.habittracker.android.ui.theme.CardShape
+import app.habittracker.android.ui.common.CategoryIcon
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -53,7 +57,6 @@ import app.habittracker.android.ui.common.domainErrorMessage
 import app.habittracker.android.ui.common.reminderSuffix
 import app.habittracker.android.ui.common.scheduleSummary
 import app.habittracker.android.ui.common.showReplacing
-import app.habittracker.android.ui.icons.habitIcon
 import app.habittracker.android.ui.theme.categoryColor
 import app.habittracker.domain.usecase.HabitDayState
 import app.habittracker.presentation.detail.HabitDetailEffect
@@ -98,7 +101,7 @@ fun HabitDetailScreen(
         if (state is HabitDetailUiState.Deleted) close()
     }
 
-    Column(modifier.fillMaxSize().padding(contentPadding)) {
+    Column(modifier.fillMaxSize().background(HabitTheme.colors.canvas).padding(contentPadding)) {
         IconButton(onClick = { close() }, modifier = Modifier.padding(start = 4.dp, top = 8.dp)) {
             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
         }
@@ -117,9 +120,9 @@ private fun DetailContent(state: HabitDetailUiState.Content, onEvent: (HabitDeta
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(habitIcon(habit.iconKey), contentDescription = null, tint = color, modifier = Modifier.size(40.dp))
+            CategoryIcon(habit.iconKey, habit.category.colorKey, size = 44.dp)
             Column {
-                Text(habit.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = color)
+                Text(habit.name, style = MaterialTheme.typography.headlineSmall, fontFamily = DisplayFont, fontWeight = FontWeight.Black)
                 val subtitle = scheduleSummary(habit.currentSchedule.days) + reminderSuffix(LocalContext.current, habit.reminderTime) + if (habit.isArchived) " · Archived" else ""
                 Text(subtitle, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -129,22 +132,26 @@ private fun DetailContent(state: HabitDetailUiState.Content, onEvent: (HabitDeta
             StatTile("${detail.stats.bestStreak}", "Best streak", "purple", Modifier.weight(1f))
             StatTile(detail.stats.completionRate?.let { "${(it * 100).roundToInt()}%" } ?: "—", "Completion", completionColorKey(detail.stats.completionRate), Modifier.weight(1f))
         }
-        MonthHeader(
-            month = detail.month,
-            canGoNext = state.canGoNext,
-            onPrev = { onEvent(HabitDetailEvent.PrevMonth) },
-            onNext = { onEvent(HabitDetailEvent.NextMonth) },
-        )
-        MonthGrid(
-            month = detail.month,
-            leadingBlanks = state.leadingBlanks,
-            cells = detail.days.mapIndexed { i, (date, dayState) ->
-                @Composable {
-                    val band = state.bands.getOrElse(i) { StreakBand.None }
-                    HabitDayCell(date.day, dayState, band, habit.category.colorKey, color)
-                }
-            },
-        )
+        Surface(shape = CardShape, color = HabitTheme.colors.card, modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(8.dp)) {
+                MonthHeader(
+                    month = detail.month,
+                    canGoNext = state.canGoNext,
+                    onPrev = { onEvent(HabitDetailEvent.PrevMonth) },
+                    onNext = { onEvent(HabitDetailEvent.NextMonth) },
+                )
+                MonthGrid(
+                    month = detail.month,
+                    leadingBlanks = state.leadingBlanks,
+                    cells = detail.days.mapIndexed { i, (date, dayState) ->
+                        @Composable {
+                            val band = state.bands.getOrElse(i) { StreakBand.None }
+                            HabitDayCell(date.day, dayState, band, habit.category.colorKey, color)
+                        }
+                    },
+                )
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 24.dp)) {
             OutlinedButton(onClick = { onEvent(HabitDetailEvent.EditClicked) }) { Text("Edit") }
             OutlinedButton(onClick = { onEvent(HabitDetailEvent.ArchiveToggled) }) {

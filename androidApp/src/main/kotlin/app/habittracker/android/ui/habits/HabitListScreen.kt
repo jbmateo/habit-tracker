@@ -1,5 +1,10 @@
 package app.habittracker.android.ui.habits
 
+import app.habittracker.android.ui.theme.HabitTheme
+import app.habittracker.android.ui.theme.CardShape
+import app.habittracker.android.ui.common.CategoryIcon
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -37,7 +42,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.habittracker.android.ui.common.CategoryHeader
 import app.habittracker.android.ui.common.reminderSuffix
 import app.habittracker.android.ui.common.scheduleSummary
-import app.habittracker.android.ui.icons.habitIcon
 import app.habittracker.android.ui.theme.categoryColor
 import app.habittracker.domain.model.Habit
 import app.habittracker.domain.usecase.HabitsOverview
@@ -71,7 +75,7 @@ fun HabitListScreen(
         }
     }
 
-    Column(modifier.fillMaxSize().padding(contentPadding)) {
+    Column(modifier.fillMaxSize().background(HabitTheme.colors.canvas).padding(contentPadding)) {
         Row(
             Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -149,13 +153,18 @@ private fun HabitListContent(overview: HabitsOverview, onEvent: (HabitListEvent)
 
 @Composable
 private fun HabitListRow(habit: Habit, onClick: () -> Unit) {
-    val color = categoryColor(habit.category.colorKey, isSystemInDarkTheme())
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 10.dp),
+        Modifier
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .fillMaxWidth()
+            .clip(CardShape)
+            .background(HabitTheme.colors.card)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(habitIcon(habit.iconKey), contentDescription = null, tint = color, modifier = Modifier.size(28.dp))
+        CategoryIcon(habit.iconKey, habit.category.colorKey)
         Column(Modifier.weight(1f)) {
             Text(habit.name, style = MaterialTheme.typography.bodyLarge)
             Text(

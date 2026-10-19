@@ -1,5 +1,7 @@
 package app.habittracker.android.ui.calendar
 
+import app.habittracker.android.ui.theme.HabitTheme
+import app.habittracker.android.ui.theme.CardShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -81,41 +83,49 @@ fun CalendarScreen(
         }
     }
 
-    CalendarContent(state, viewModel::onEvent, modifier.fillMaxSize().padding(contentPadding))
+    CalendarContent(state, viewModel::onEvent, modifier.fillMaxSize().background(HabitTheme.colors.canvas).padding(contentPadding))
 }
 
 @Composable
 private fun CalendarContent(state: CalendarUiState, onEvent: (CalendarEvent) -> Unit, modifier: Modifier) {
     LazyColumn(modifier, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
         item {
-            MonthHeader(
-                month = state.month,
-                canGoNext = state.canGoNext,
-                onPrev = { onEvent(CalendarEvent.PrevMonth) },
-                onNext = { onEvent(CalendarEvent.NextMonth) },
-            )
+            // Header and grid share one card; the header stays visible while a month loads.
+            Surface(shape = CardShape, color = HabitTheme.colors.card, modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(8.dp)) {
+                    MonthHeader(
+                        month = state.month,
+                        canGoNext = state.canGoNext,
+                        onPrev = { onEvent(CalendarEvent.PrevMonth) },
+                        onNext = { onEvent(CalendarEvent.NextMonth) },
+                    )
+                    state.calendar?.let { calendar -> CalendarGrid(state, calendar, onEvent) }
+                }
+            }
         }
         val calendar = state.calendar ?: return@LazyColumn
-        item {
-            MonthGrid(
-                month = state.month,
-                leadingBlanks = state.leadingBlanks,
-                cells = calendar.days.mapIndexed { i, day ->
-                    @Composable {
-                        val band = state.bands.getOrElse(i) { StreakBand.None }
-                        DayCell(day, band, selected = state.selected?.date == day.date) {
-                            onEvent(
-                                if (state.selected?.date == day.date) CalendarEvent.ClearSelection
-                                else CalendarEvent.SelectDay(day.date),
-                            )
-                        }
-                    }
-                },
-            )
-        }
         item { MonthSummary(calendar, Modifier.padding(top = 12.dp)) }
         state.selected?.let { detail -> item { DayPanel(detail, onEvent, Modifier.padding(top = 12.dp)) } }
     }
+}
+
+@Composable
+private fun CalendarGrid(state: CalendarUiState, calendar: MonthCalendar, onEvent: (CalendarEvent) -> Unit) {
+    MonthGrid(
+        month = state.month,
+        leadingBlanks = state.leadingBlanks,
+        cells = calendar.days.mapIndexed { i, day ->
+            @Composable {
+                val band = state.bands.getOrElse(i) { StreakBand.None }
+                DayCell(day, band, selected = state.selected?.date == day.date) {
+                    onEvent(
+                        if (state.selected?.date == day.date) CalendarEvent.ClearSelection
+                        else CalendarEvent.SelectDay(day.date),
+                    )
+                }
+            }
+        },
+    )
 }
 
 @Composable
@@ -215,7 +225,7 @@ private fun DayPanel(detail: DayDetail, onEvent: (CalendarEvent) -> Unit, modifi
         java.time.LocalDate.of(detail.date.year, detail.date.month.ordinal + 1, detail.date.day).format(dayFormatter)
     }
     val pendingDay = detail.status is DayStatus.InProgress || detail.status is DayStatus.Future
-    Surface(modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
+    Surface(modifier.fillMaxWidth(), shape = CardShape, color = HabitTheme.colors.card) {
         Column(Modifier.padding(vertical = 12.dp)) {
             Text(date, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp))
             if (detail.groups.isEmpty()) {
