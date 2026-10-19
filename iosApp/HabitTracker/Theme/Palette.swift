@@ -38,29 +38,20 @@ enum Palette {
     /// WCAG contrast ratio between the fill for [key] and its `onColor`, for the given appearance.
     static func contrastRatio(forKey key: String, dark: Bool) -> Double {
         let pair = pairs[ColorKeys.shared.resolve(key: key)] ?? pairs["gray"]!
-        let fill = luminance(dark ? pair.dark : pair.light)
+        let fill = Theme.luminance(dark ? pair.dark : pair.light)
         let on = onIsBlack(dark ? pair.dark : pair.light) ? 0.0 : 1.0
         return (max(fill, on) + 0.05) / (min(fill, on) + 0.05)
     }
 
     private static func onIsBlack(_ hex: UInt32) -> Bool {
-        let fill = luminance(hex)
+        let fill = Theme.luminance(hex)
         let againstBlack = (fill + 0.05) / 0.05
         let againstWhite = 1.05 / (fill + 0.05)
         return againstBlack >= againstWhite
     }
-
-    /// WCAG relative luminance of an sRGB hex color.
-    private static func luminance(_ hex: UInt32) -> Double {
-        func channel(_ shift: UInt32) -> Double {
-            let c = Double((hex >> shift) & 0xFF) / 255
-            return c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
-        }
-        return 0.2126 * channel(16) + 0.7152 * channel(8) + 0.0722 * channel(0)
-    }
 }
 
-private extension UIColor {
+extension UIColor {
     convenience init(hex: UInt32) {
         self.init(
             red: CGFloat((hex >> 16) & 0xFF) / 255,
