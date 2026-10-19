@@ -4,6 +4,8 @@ import app.cash.turbine.test
 import app.habittracker.HEALTH
 import app.habittracker.date
 import app.habittracker.domain.model.Completion
+import app.habittracker.domain.model.MilestoneSeen
+import app.habittracker.domain.usecase.CelebrationMemory
 import app.habittracker.domain.usecase.ObserveTodayDashboard
 import app.habittracker.domain.usecase.ToggleCompletion
 import app.habittracker.fakes.FakeAppClock
@@ -33,7 +35,10 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.minus
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DashboardViewModelTest {
@@ -48,8 +53,16 @@ class DashboardViewModelTest {
         ToggleCompletion(habits, completions, clock),
         ObserveTodaySort(prefs),
         SetTodaySort(prefs),
+        CelebrationMemory(prefs),
         clock,
     )
+
+    /** Perfect days for habit "a" on the [n] days ending yesterday (today is 2026-01-14). */
+    private fun perfectDaysEndingYesterday(n: Int) {
+        store.completions.value = (1..n).map { Completion("a", date("2026-01-14").minus(DatePeriod(days = it))) }
+    }
+
+    private fun milestone(s: DashboardUiState) = assertIs<DashboardUiState.Content>(s).milestone
 
     @BeforeTest fun setUp() { Dispatchers.setMain(StandardTestDispatcher()) }
     @AfterTest fun tearDown() { Dispatchers.resetMain() }
@@ -172,5 +185,79 @@ class DashboardViewModelTest {
             assertEquals(s.dashboard.groups.flatMap { it.items }, s.items)
         }
         assertEquals(TodaySort.Category, prefs.todaySort.value)
+    }
+
+    @Test fun celebrateOncePerDayAcrossReopen() = runTest {
+        store.habits.value = listOf(habit("a"))
+        val first = vm()
+        val firstEffects = mutableListOf<DashboardEffect>()
+        backgroundScope.launch { first.effects.toList(firstEffects) }
+        first.uiState.test {
+            awaitItem(); awaitItem()
+            first.onEvent(DashboardEvent.ToggleHabit("a"))
+            assertEquals(true, content(awaitItem()).isPerfect)
+        }
+        advanceUntilIdle()
+        assertEquals(listOf<DashboardEffect>(DashboardEffect.Celebrate), firstEffects)
+        assertEquals(date("2026-01-14"), prefs.celebratedOn.value)
+
+        val second = vm()
+        val secondEffects = mutableListOf<DashboardEffect>()
+        backgroundScope.launch { second.effects.toList(secondEffects) }
+        second.uiState.test {
+            awaitItem(); awaitItem()
+            second.onEvent(DashboardEvent.ToggleHabit("a"))
+            assertEquals(false, content(awaitItem()).isPerfect)
+            second.onEvent(DashboardEvent.ToggleHabit("a"))
+            assertEquals(true, content(awaitItem()).isPerfect)
+        }
+        advanceUntilIdle()
+        assertTrue(secondEffects.isEmpty())
+    }
+
+    @Test fun celebrateFiresNextDayAfterCelebratingYesterday() = runTest {
+        store.habits.value = listOf(habit("a"))
+        prefs.celebratedOn.value = date("2026-01-13")
+        val vm = vm()
+        val effects = mutableListOf<DashboardEffect>()
+        backgroundScope.launch { vm.effects.toList(effects) }
+        vm.uiState.test {
+            awaitItem(); awaitItem()
+            vm.onEvent(DashboardEvent.ToggleHabit("a"))
+            assertEquals(true, content(awaitItem()).isPerfect)
+        }
+        advanceUntilIdle()
+        assertEquals(listOf<DashboardEffect>(DashboardEffect.Celebrate), effects)
+    }
+
+    @Test fun milestoneShownAtSevenDayStreak() = runTest {
+        store.habits.value = listOf(habit("a", created = "2026-01-01"))
+        perfectDaysEndingYesterday(7)
+        vm().uiState.test {
+            awaitItem()
+            assertEquals(7, milestone(awaitItem()))
+        }
+    }
+
+    @Test fun noMilestoneUnderSeven() = runTest {
+        store.habits.value = listOf(habit("a", created = "2026-01-01"))
+        perfectDaysEndingYesterday(6)
+        vm().uiState.test {
+            awaitItem()
+            assertNull(milestone(awaitItem()))
+        }
+    }
+
+    @Test fun dismissStoresTheShownMilestone() = runTest {
+        store.habits.value = listOf(habit("a", created = "2025-11-01"))
+        perfectDaysEndingYesterday(40)
+        val vm = vm()
+        vm.uiState.test {
+            awaitItem()
+            assertEquals(30, milestone(awaitItem()))
+            vm.onEvent(DashboardEvent.DismissMilestone)
+            assertNull(milestone(awaitItem()))
+        }
+        assertEquals(MilestoneSeen(date("2025-12-05"), 30), prefs.milestoneSeen.value)
     }
 }

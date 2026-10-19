@@ -8,6 +8,7 @@ import app.habittracker.data.repository.SqlPreferencesRepository
 import app.habittracker.domain.repository.PreferencesRepository
 import app.habittracker.domain.usecase.ObserveTodaySort
 import app.habittracker.domain.usecase.SetTodaySort
+import app.habittracker.domain.usecase.CelebrationMemory
 import app.habittracker.data.repository.SqlHabitRepository
 import app.habittracker.data.time.SystemAppClock
 import app.habittracker.domain.repository.CategoryRepository
@@ -85,6 +86,7 @@ val sharedModule: Module = module {
     factory { ObserveCategories(get()) }
     factory { ObserveTodaySort(get()) }
     factory { SetTodaySort(get()) }
+    factory { CelebrationMemory(get()) }
     factory { ObserveDayDetail(get(), get(), get()) }
     factory { ObserveHabitDetail(get(), get(), get()) }
     factory { ObserveHabits(get()) }

@@ -14,11 +14,13 @@ sealed interface DashboardUiState {
     /**
      * Habits exist; empty [TodayDashboard.groups] means nothing is due today.
      * @property items today's habits as one list, ordered by [sort].
+     * @property milestone a streak milestone (7, 30, 100 or 365) to show until dismissed, or null.
      */
     data class Content(
         val dashboard: TodayDashboard,
         val items: List<TodayHabitItem>,
         val sort: TodaySort,
+        val milestone: Int? = null,
     ) : DashboardUiState
 }
 
@@ -27,6 +29,7 @@ sealed interface DashboardEvent {
     data object AddHabitClicked : DashboardEvent
     data class HabitClicked(val id: String) : DashboardEvent
     data class SortSelected(val sort: TodaySort) : DashboardEvent
+    data object DismissMilestone : DashboardEvent
 }
 
 sealed interface DashboardEffect {
